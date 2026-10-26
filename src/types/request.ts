@@ -148,6 +148,7 @@ export interface OcxParsedRequest {
   _kiroAuthContext?: Pick<KiroOAuthMetadata, "profileArn" | "apiRegion" | "ssoRegion" | "authType">;
   /** Account-scoped Zed user identity paired with the long-lived access token. */
   _zedAuthContext?: { userId: string };
+  _workbuddyAuthContext?: import("../oauth/types").WorkBuddyOAuthMetadata;
   /** Provider-private continuation metadata resolved from the Responses previous_response_id chain. */
   _providerContinuation?: OcxProviderContinuationState;
   /** Persisted continuation considered only after the final physical route is known. */
@@ -322,8 +323,23 @@ export interface OcxDocumentContent {
   filename?: string;
 }
 
+/**
+ * Inline audio carried by Codex's Responses input. Chat Completions accepts this as an
+ * `input_audio` content part only for WAV and MP3 payloads, so the normalized form keeps the
+ * base64 bytes and a wire-safe format label rather than the original data URL.
+ */
+export interface OcxAudioContent {
+  type: "audio";
+  /** Base64 payload with no `data:` prefix. */
+  data: string;
+  /** Chat Completions input_audio supports WAV and MP3. */
+  format: "mp3" | "wav";
+  /** Text marker for wires that cannot carry the bytes. */
+  text: string;
+}
+
 /** A user/developer message content part: text, native media, or an attached document. */
-export type OcxContentPart = OcxTextContent | OcxImageContent | OcxVideoContent | OcxDocumentContent;
+export type OcxContentPart = OcxTextContent | OcxImageContent | OcxVideoContent | OcxDocumentContent | OcxAudioContent;
 
 export interface OcxThinkingContent {
   type: "thinking";
