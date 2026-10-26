@@ -595,3 +595,8 @@ present at validation is refused, and one exchanged into place during a mutation
 than redirecting OpenCodex's write outside Cline's settings directory.
 
 Routed `ocx claude` launches apply opt-in `claudeCode.subagentModelForce` via independent user-wins defaults for `CLAUDE_CODE_SUBAGENT_MODEL` and `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`. Native launches add neither; plain Claude and persistent settings remain unchanged. Claude Code 2.1.257+ implements force, excluding forks and inherit-model skills; main and small-fast models remain separate.
+
+## OMP model usage projection
+Oh My Pi (`omp`) reads proxy models through `models.yml` under its agent home. Quota usage is projected per active model ID and matched to native status-line windows (5h, daily, 7d, monthly) while preserving proxy-local authentication boundaries.
+
+> Decision record: [ADR-7281](../decisions/ADR-7281-omp-model-usage.md)

@@ -199,6 +199,19 @@ on. **Logs** works the same way with `#logs` and `#logs/debug`. An older `#provi
 bookmark now lands on `#providers`.
 
 Cost values in **Logs** and **Usage** are API list-price equivalents calculated from reported tokens.
+The estimate prefers an operator's saved model price, then a curated official price, then the live
+[models.dev](https://models.dev) catalog, then the bundled snapshot. The live catalog is cached locally
+for 24 hours and is refreshed when you open Usage; an offline proxy keeps the last copy and the bundled
+rows. A routing prefix is stripped before that lookup, so a custom provider serving
+`deepseek/deepseek-v4.1-flash` is priced from DeepSeek's official list rather than from the
+reseller's markup. Published prices are base rates per 1M tokens, so a vendor's long-context
+surcharge is only applied where opencodex already carries that rule.
+Each **Usage** Models row has a **Bill as** action: it lists up to ten models.dev listings whose id
+fuzzily matches that model, and the selected listing's four rates are saved as this provider's
+`modelCosts` entry for the model. **Use automatic pricing** removes that override. A row whose model
+exists only on a reseller (for example DeepSeek v4.1 through several gateways) stays unpriced until
+you choose a listing, because guessing which listing applies would misstate the amount.
+
 For a custom usage interval, the server must confirm the exact requested start and end times.
 If an older running proxy does not support those bounds, the dashboard and CLI reject its report;
 upgrade and restart that proxy before retrying. Resetting a manual model price affects only that

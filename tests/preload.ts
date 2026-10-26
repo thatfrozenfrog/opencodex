@@ -77,6 +77,10 @@ process.env.OCX_TEST_HOME_GUARD = "1";
 process.env.OCX_TEST_PRELOAD_PID = String(process.pid);
 process.env.OCX_DISABLE_UPDATE_CHECK = "1";
 process.env.OPENCODEX_KIRO_MODEL_DISCOVERY = "0";
+// Usage pricing must not reach models.dev from a test process. Suites that
+// exercise the live catalog seed it explicitly (or clear this flag around a
+// stubbed fetch); every other suite keeps the bundled/overlay pricing path.
+process.env.OPENCODEX_MODELS_DEV_PRICING = "0";
 
 if (!isTestHomeGuardArmed() || !protectedHomeForTests()) {
   throw new Error("test home guard failed to arm; refusing to run tests unprotected");

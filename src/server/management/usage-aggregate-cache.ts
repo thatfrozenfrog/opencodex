@@ -14,6 +14,7 @@ import {
   type UsageSummaryAccumulator,
 } from "../../usage/summary";
 import { userCostOverlayVersion } from "../../usage/user-cost-overlays";
+import { modelsDevPricingVersion } from "../../usage/models-dev-pricing";
 import type { UsageTimeWindow } from "../../usage/time-range";
 import {
   createJevStatsAccumulator,
@@ -34,6 +35,7 @@ interface RetainedUsageAggregate {
   processedThroughBytes: number;
   processedThroughDigest: string;
   overlayVersion: number;
+  catalogVersion: number;
   timeZone: string;
   retainedAt: number;
 }
@@ -57,6 +59,7 @@ export interface UsageAggregateResult {
   revision: UsageLogRevision | null;
   processedThroughBytes: number;
   overlayVersion: number;
+  catalogVersion: number;
   timeZone: string;
   update: "unchanged" | "append" | "rebuild";
 }
@@ -111,6 +114,7 @@ function resultFrom(
     revision: state.revision,
     processedThroughBytes: state.processedThroughBytes,
     overlayVersion: state.overlayVersion,
+    catalogVersion: state.catalogVersion,
     timeZone: state.timeZone,
     update,
   };
@@ -128,6 +132,7 @@ function makeRetainedAggregate(
   accumulator: UsageSummaryAccumulator,
   scan: Awaited<ReturnType<typeof scanUsageLedgerCooperatively>>,
   overlayVersion: number,
+  catalogVersion: number,
   timeZone: string,
 ): RetainedUsageAggregate {
   return {
@@ -139,6 +144,7 @@ function makeRetainedAggregate(
     processedThroughBytes: scan.processedThroughBytes,
     processedThroughDigest: scan.processedThroughDigest,
     overlayVersion,
+    catalogVersion,
     timeZone,
     retainedAt: Date.now(),
   };
@@ -148,6 +154,7 @@ async function rebuildAggregate(options: UsageAggregateOptions): Promise<UsageAg
   let lastError: unknown;
   for (let attempt = 0; attempt < MAX_REBUILD_ATTEMPTS; attempt += 1) {
     const overlayVersion = userCostOverlayVersion();
+    const catalogVersion = modelsDevPricingVersion();
     const timeZone = currentTimeZone();
     const accumulator = createUsageSummaryAccumulator({ mode: "row-unique" });
     const apiKeyAccumulator = options.configuredApiKeyIds
@@ -160,12 +167,12 @@ async function rebuildAggregate(options: UsageAggregateOptions): Promise<UsageAg
           apiKeyAccumulator?.add(entry);
         },
       });
-      if (userCostOverlayVersion() !== overlayVersion || currentTimeZone() !== timeZone) {
+      if (userCostOverlayVersion() !== overlayVersion || modelsDevPricingVersion() !== catalogVersion || currentTimeZone() !== timeZone) {
         lastError = new Error("usage aggregation inputs changed during rebuild");
         continue;
       }
 
-      const state = makeRetainedAggregate(accumulator, scan, overlayVersion, timeZone);
+      const state = makeRetainedAggregate(accumulator, scan, overlayVersion, catalogVersion, timeZone);
       const result = publishRetainedAggregate(state);
       if (apiKeyAccumulator && options.configuredApiKeyIds) {
         cacheApiKeyUsageFromRollup(
@@ -195,9 +202,11 @@ function requiresRebuild(
   state: RetainedUsageAggregate,
   observed: UsageLogRevision | null,
   overlayVersion: number,
+  catalogVersion: number,
   timeZone: string,
 ): boolean {
-  if (state.overlayVersion !== overlayVersion || state.timeZone !== timeZone) return true;
+  if (state.overlayVersion !== overlayVersion || state.catalogVersion !== catalogVersion
+    || state.timeZone !== timeZone) return true;
   if (state.identityKey !== usageLogIdentityKey(observed)) return true;
   if (!state.revision || !observed) return state.revision !== observed;
   if (observed.size < state.revision.size) return true;
@@ -223,7 +232,8 @@ async function appendAggregate(
       expectedProcessedThroughDigest: state.processedThroughDigest,
       onEntry: entry => candidate.add(entry),
     });
-    if (userCostOverlayVersion() !== state.overlayVersion || currentTimeZone() !== state.timeZone) {
+    if (userCostOverlayVersion() !== state.overlayVersion || modelsDevPricingVersion() !== state.catalogVersion
+      || currentTimeZone() !== state.timeZone) {
       if (retainedAggregate === state) retainedAggregate = null;
       rebuildAfterUnpin = true;
     } else {
@@ -261,8 +271,9 @@ async function refreshAggregate(options: UsageAggregateOptions): Promise<UsageAg
 
   const observed = currentUsageLogRevision();
   const overlayVersion = userCostOverlayVersion();
+  const catalogVersion = modelsDevPricingVersion();
   const timeZone = currentTimeZone();
-  if (requiresRebuild(state, observed, overlayVersion, timeZone)) {
+  if (requiresRebuild(state, observed, overlayVersion, catalogVersion, timeZone)) {
     retainedAggregate = null;
     return rebuildAggregate(options);
   }
@@ -361,15 +372,17 @@ async function rebuildFilteredAggregate(
   let lastError: unknown;
   for (let attempt = 0; attempt < MAX_REBUILD_ATTEMPTS; attempt += 1) {
     const overlayVersion = userCostOverlayVersion();
+    const catalogVersion = modelsDevPricingVersion();
     const timeZone = currentTimeZone();
     const accumulator = createUsageSummaryAccumulator({ filter, mode: "row-unique", window });
     try {
       const scan = await scanUsageLedgerCooperatively({ onEntry: entry => accumulator.add(entry) });
-      if (userCostOverlayVersion() !== overlayVersion || currentTimeZone() !== timeZone) {
+      if (userCostOverlayVersion() !== overlayVersion || modelsDevPricingVersion() !== catalogVersion
+        || currentTimeZone() !== timeZone) {
         lastError = new Error("usage aggregation inputs changed during filtered scan");
         continue;
       }
-      const state = makeRetainedAggregate(accumulator, scan, overlayVersion, timeZone);
+      const state = makeRetainedAggregate(accumulator, scan, overlayVersion, catalogVersion, timeZone);
       return publishFilteredAggregate(key, state, "rebuild");
     } catch (error) {
       lastError = error;
@@ -397,7 +410,8 @@ async function appendFilteredAggregate(
       expectedProcessedThroughDigest: state.processedThroughDigest,
       onEntry: entry => candidate.add(entry),
     });
-    if (userCostOverlayVersion() !== state.overlayVersion || currentTimeZone() !== state.timeZone) {
+    if (userCostOverlayVersion() !== state.overlayVersion || modelsDevPricingVersion() !== state.catalogVersion
+      || currentTimeZone() !== state.timeZone) {
       if (retainedFilteredAggregates.get(key) === state) retainedFilteredAggregates.delete(key);
       rebuildAfterUnpin = true;
     } else {
@@ -435,8 +449,9 @@ async function refreshFilteredAggregate(
   if (!state) return rebuildFilteredAggregate(key, filter, window);
   const observed = currentUsageLogRevision();
   const overlayVersion = userCostOverlayVersion();
+  const catalogVersion = modelsDevPricingVersion();
   const timeZone = currentTimeZone();
-  if (requiresRebuild(state, observed, overlayVersion, timeZone)) {
+  if (requiresRebuild(state, observed, overlayVersion, catalogVersion, timeZone)) {
     retainedFilteredAggregates.delete(key);
     return rebuildFilteredAggregate(key, filter, window);
   }

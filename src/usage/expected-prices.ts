@@ -476,6 +476,7 @@ export const EXPECTED_PRICE_OVERLAYS: readonly ExpectedPriceOverlay[] = [
   // price as an estimate: Go itself is subscription-billed, hence verified-derived.
   { provider: "opencode-go", modelId: "qwen3.8-max", cost4: QWEN38_MAX, source: `vendor list price applied to the OpenCode Go surface; ${QWEN38_MAX_PRICING}`, verifiedAt: "2026-09-17", status: "verified-derived" },
   { provider: "opencode-go", modelId: "qwen3.8-flash", cost4: QWEN38_FLASH, source: `vendor list price applied to the OpenCode Go surface; ${QWEN38_FLASH_PRICING}`, verifiedAt: "2026-09-17", status: "verified-derived" },
+  { provider: "deepseek", modelId: "deepseek-v4.1-flash", cost4: DEEPSEEK_V41_FLASH, source: `official DeepSeek peak-window list rate (off-peak 0.15/0.60 + cache-hit 0.003 not baked in); ${DEEPSEEK_PRICING}`, verifiedAt: "2026-09-17", status: "verified" },
   { provider: "opencode-go", modelId: "deepseek-v4.1-flash", cost4: DEEPSEEK_V41_FLASH, source: `peak-window list rate applied to the OpenCode Go surface (off-peak 0.15/0.60 + cache-hit 0.003 not baked in); ${DEEPSEEK_PRICING}`, verifiedAt: "2026-09-17", status: "verified-derived" },
   { provider: "opencode-go", modelId: "glm-5.3-flash", cost4: GLM_53_FLASH, source: `z.ai list price applied to the OpenCode Go surface as an estimate; ${ZAI_PRICING}`, verifiedAt: "2026-09-17", status: "verified-derived" },
   { provider: "opencode-go", modelId: "muse-spark-1.3-contributor", cost4: META_MUSE_SPARK_13_CONTRIBUTOR, source: `Meta Model API Contributor-tier price applied to the OpenCode Go surface as an estimate; ${META_SPARK_CONTRIBUTOR_SOURCE}`, verifiedAt: "2026-09-17", status: "verified-derived" },
@@ -607,6 +608,31 @@ export function findVerifiedPriceOverride(
  * NEVER returns "unverified" rows — fail-closed is enforced in code, not just docs.
  * No fuzzy / case-fold / wire-model fallback.
  */
+/** Provider-independent official list price for a model whose vendor page lags the id. */
+export interface OfficialModelPrice {
+  modelId: string;
+  cost4: Cost4;
+  source: string;
+  verifiedAt: string;
+  status: "verified" | "verified-derived";
+}
+
+export const OFFICIAL_MODEL_PRICES: readonly OfficialModelPrice[] = [
+  {
+    modelId: "deepseek-v4.1-flash",
+    cost4: DEEPSEEK_V41_FLASH,
+    source: `official DeepSeek peak-window list rate (off-peak 0.15/0.60 + cache-hit 0.003 not baked in); ${DEEPSEEK_PRICING}`,
+    verifiedAt: "2026-09-17",
+    status: "verified",
+  },
+] as const;
+
+/** Exact bare model id, then the dot->dash spelling used by a few surfaces. */
+export function findOfficialModelPrice(modelId: string): OfficialModelPrice | undefined {
+  return OFFICIAL_MODEL_PRICES.find(row => row.modelId === modelId)
+    ?? (modelId.includes(".") ? OFFICIAL_MODEL_PRICES.find(row => row.modelId === modelId.replaceAll(".", "-")) : undefined);
+}
+
 export function findExpectedPriceOverlay(
   provider: string,
   modelId: string,

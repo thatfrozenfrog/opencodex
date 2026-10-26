@@ -16,6 +16,7 @@ import { SectionTabs } from "../components/section-tabs";
 import { sectionAnchorId } from "../section-anchors";
 import { parseUsageTimeRange, type UsageRangeError, type UsageTimeWindow } from "../usage-time-range";
 import UsageCompanionView from "./usage-companion-view";
+import BillAsDialog from "../components/BillAsDialog";
 import { readUsageTab, selectUsageTab, usageTabKeyDown } from "./usage-tab-keydown";
 
 type Range = "all" | "30d" | "7d";
@@ -746,6 +747,8 @@ function UsageModelsTable({
   models,
   modelQuery,
   onModelQuery,
+  apiBase,
+  onPriceSaved,
   locale,
   t,
   workspace = false,
@@ -753,10 +756,13 @@ function UsageModelsTable({
   models: UsageModel[];
   modelQuery: string;
   onModelQuery: (query: string) => void;
+  apiBase: string;
+  onPriceSaved: () => void;
   locale: Locale;
   t: TFn;
   workspace?: boolean;
 }) {
+  const [billAs, setBillAs] = useState<UsageModel | null>(null);
   const searchLabel = t("usage.search.models");
   const sectionLabel = t("usage.section.models");
   const titleId = "usage-models-title";
@@ -794,6 +800,7 @@ function UsageModelsTable({
             <th className="num">{t("usage.col.cacheHits")}</th>
             <th className="num">{t("usage.col.cacheWrites")}</th>
             <th className="num">{t("usage.col.cacheHitRate")}</th>
+            <th className="num">{t("usage.col.billAs")}</th>
           </tr>
         </thead>
         <tbody>
@@ -833,6 +840,13 @@ function UsageModelsTable({
                   {/* A `title` reaches a pointer and nothing else, so the sentence is also read. */}
                   {cacheCoverage !== undefined && <span className="sr-only">{cacheCoverage}</span>}
                 </td>
+                <td className="num">
+                  <button type="button" className="btn btn-ghost btn-sm"
+                    aria-label={t("usage.billAs.actionLabel", { model: model.model })}
+                    onClick={() => setBillAs(model)}>
+                    {t("usage.billAs.action")}
+                  </button>
+                </td>
               </tr>
             );
           })}
@@ -841,12 +855,18 @@ function UsageModelsTable({
       <p id={listPriceDisclaimerId} className="muted text-caption">{t("usage.cost.disclaimer")}</p>
     </div>
   );
+  const dialog = billAs && (
+    <BillAsDialog apiBase={apiBase} provider={billAs.provider} model={billAs.model}
+      providerLabel={formatProviderDisplayName(billAs.provider, t)}
+      onSaved={onPriceSaved} onClose={() => setBillAs(null)} />
+  );
 
   if (workspace) {
     return (
       <UsageWorkspaceSection title={sectionLabel} titleId={titleId}>
         <div className="usw-section-toolbar">{searchInput}</div>
         {table}
+        {dialog}
       </UsageWorkspaceSection>
     );
   }
@@ -858,6 +878,7 @@ function UsageModelsTable({
         {searchInput}
       </div>
       {table}
+      {dialog}
     </section>
   );
 }
@@ -983,6 +1004,8 @@ function UsageWorkspaceBody({
   onModelQuery,
   sortedProviders,
   range,
+  apiBase,
+  onPriceSaved,
   locale,
   t,
 }: {
@@ -995,6 +1018,8 @@ function UsageWorkspaceBody({
   onModelQuery: (query: string) => void;
   sortedProviders: UsageProvider[];
   range: Range | null;
+  apiBase: string;
+  onPriceSaved: () => void;
   locale: Locale;
   t: TFn;
 }) {
@@ -1016,7 +1041,8 @@ function UsageWorkspaceBody({
       label: t("usage.section.models"),
       meta: data ? `${data.models.length}` : "—",
       body: data
-        ? <UsageModelsTable models={filteredModels} modelQuery={modelQuery} onModelQuery={onModelQuery} locale={locale} t={t} workspace />
+        ? <UsageModelsTable models={filteredModels} modelQuery={modelQuery} onModelQuery={onModelQuery}
+            apiBase={apiBase} onPriceSaved={onPriceSaved} locale={locale} t={t} workspace />
         : null,
     },
     {
@@ -1327,6 +1353,8 @@ export default function Usage({ apiBase, connected = false, apiKeyId }: { apiBas
             onModelQuery={setModelQuery}
             sortedProviders={sortedProviders}
             range={customWindow ? null : range}
+            apiBase={apiBase}
+            onPriceSaved={() => { void resource.refresh(); }}
             locale={locale}
             t={t}
           />

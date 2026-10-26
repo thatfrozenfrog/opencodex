@@ -7,6 +7,7 @@ import { saveConfig } from "../../src/config";
 import { startServer } from "../../src/server";
 import type { OcxConfig } from "../../src/types";
 import { refreshUserCostOverlays, resetPreservedDiskOnlyProvidersForTests, userCostOverlayVersion } from "../../src/usage/user-cost-overlays";
+import { resetModelsDevPricingForTests, seedModelsDevPricingForTests } from "../../src/usage/models-dev-pricing";
 import { stopUserCostOverlayReconciler } from "../../src/usage/user-cost-overlay-reconciler";
 import { installIsolatedCodexHome, type IsolatedCodexHome } from "../helpers/isolated-codex-home";
 import { removeTreeWithRetry } from "../helpers/remove-tree";
@@ -90,6 +91,7 @@ beforeEach(() => {
   // why it passed in CI's dedicated single-file job and failed locally in any
   // run that shared a process with overlay state.
   resetPreservedDiskOnlyProvidersForTests();
+  resetModelsDevPricingForTests();
   saveConfig(baseConfig());
 });
 
@@ -101,6 +103,7 @@ afterEach(() => {
   usageAggregateCacheModule.resetUsageAggregateCacheForTests();
   // Leave no overlay state for the next file, for the same reason.
   resetPreservedDiskOnlyProvidersForTests();
+  resetModelsDevPricingForTests();
   if (previousHome === undefined) delete process.env.OPENCODEX_HOME;
   else process.env.OPENCODEX_HOME = previousHome;
   isolatedCodexHome?.restore();
@@ -1060,6 +1063,45 @@ describe("GET /api/usage", () => {
       expect(body.providers[0].totalTokens).toBe(expectedTokens);
       expect(body.days.reduce((sum: number, day: { totalTokens: number }) => sum + day.totalTokens, 0)).toBe(expectedTokens);
       expect(body.historyTruncated).toBe(false);
+    } finally {
+      await server.stop(true);
+    }
+  });
+});
+
+describe("GET /api/usage/model-price-candidates", () => {
+  test("ranks published models.dev rows, caps at ten, and rejects an empty query", async () => {
+    const providers: Record<string, Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }>> = {};
+    for (let index = 0; index < 12; index += 1) {
+      providers[`vendor-${String(index).padStart(2, "0")}`] = {
+        "muse-spark-1.3": { input: index + 1, output: index + 2, cacheRead: 0, cacheWrite: 0 },
+      };
+    }
+    providers.meta = { "muse-spark-1.3": { input: 1.25, output: 4.25, cacheRead: 0.15, cacheWrite: 0 } };
+    seedModelsDevPricingForTests(providers);
+
+    const server = startServer(0);
+    try {
+      const response = await fetch(new URL(
+        "/api/usage/model-price-candidates?model=muse-spark-1.3&provider=meta-model&limit=50",
+        server.url,
+      ));
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.model).toBe("muse-spark-1.3");
+      expect(body.candidates).toHaveLength(10);
+      expect(body.candidates[0]).toMatchObject({
+        provider: "meta",
+        model: "muse-spark-1.3",
+        price: { input: 1.25, output: 4.25, cacheRead: 0.15, cacheWrite: 0 },
+      });
+
+      const miss = await fetch(new URL("/api/usage/model-price-candidates?model=no-such-model-anywhere", server.url));
+      expect(miss.status).toBe(200);
+      expect((await miss.json()).candidates).toEqual([]);
+
+      const empty = await fetch(new URL("/api/usage/model-price-candidates?model=%20%20", server.url));
+      expect(empty.status).toBe(400);
     } finally {
       await server.stop(true);
     }

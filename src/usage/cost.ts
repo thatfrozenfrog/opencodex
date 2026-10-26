@@ -21,10 +21,12 @@ import { baseProviderLabel } from "../providers/label";
 import type { PersistedUsageAttempt, UsageStatus } from "./log";
 import { canonicalAntigravityUsageModel } from "../providers/antigravity-models";
 import { activeAccountPricingProviders, activeConfiguredProviders, activeUserCostOverlays, userCostOverlayVersion } from "./user-cost-overlays";
+import { modelsDevProviderKey, modelsDevPublishedPrice, modelsDevPricingVersion } from "./models-dev-pricing";
 import {
   EXPECTED_PRICE_OVERLAYS,
   findExpectedPriceOverlay,
   findVerifiedPriceOverride,
+  findOfficialModelPrice,
   findPriorityPricingRule,
   cursorFastPriceMultiplier,
   cursorFastPriceSource,
@@ -81,9 +83,11 @@ export interface MatchedPrice {
   provider: string;
   modelId: string;
   jawcodeProvider?: string;
+  /** models.dev provider key when the live catalog supplied this row. */
+  modelsDevProvider?: string;
   cost4: Cost4;
   promptLengthPricing?: PromptLengthPricing;
-  source: "jawcode" | "expected" | "user";
+  source: "jawcode" | "expected" | "modelsdev" | "user";
   sourceRef?: string;
   verifiedAt?: string;
   status: "verified" | "verified-derived";
@@ -231,7 +235,7 @@ export function resolveMatchedPrice(
   // user overlays get a NEW array identity + version bump on every config refresh,
   // so memoized rows never go stale.
   if (overlays === EXPECTED_PRICE_OVERLAYS && userOverlays === activeUserCostOverlays()) {
-    const cacheKey = `${userCostOverlayVersion()} ${options.allowModelLevelFallback !== false} ${provider} ${modelId}`;
+    const cacheKey = `${userCostOverlayVersion()} ${modelsDevPricingVersion()} ${options.allowModelLevelFallback !== false} ${provider} ${modelId}`;
     if (!priceMemo.has(cacheKey)) {
       if (priceMemo.size >= 512) priceMemo.clear();
       priceMemo.set(cacheKey, resolveMatchedPriceInner(provider, modelId, overlays, userOverlays, options));
@@ -268,8 +272,9 @@ function resolveMatchedPriceInner(
 
 /**
  * Exact provider/model price lookup: user-configured `modelCosts` first, then
- * an exact official correction, the jawcode provider bundle, the expected-price overlay, then the
- * model-level vendor fallback. All-zero catalog rows fall through; user zeros win.
+ * an exact official correction, the live models.dev catalog, the jawcode
+ * provider bundle, the expected-price overlay, then the model-level vendor
+ * fallback. All-zero catalog rows fall through; user zeros win.
  */
 function resolveMatchedPriceExact(
   provider: string,
@@ -298,6 +303,39 @@ function resolveMatchedPriceExact(
       ...cursorFastPriceProvenance(provider, modelId),
     };
   }
+  // A `<vendor>/<model>` id names the official price surface explicitly. Resolve
+  // that before the serving provider's own row, so a reseller or custom route
+  // cannot substitute its list price for the model vendor's.
+  const prefixed = options.allowModelLevelFallback === false ? null : officialPrefixedPrice(provider, modelId);
+  if (prefixed) {
+    return {
+      ...prefixed,
+      cost4: multiplyCursorFastCost(prefixed.cost4, provider, modelId),
+      ...cursorFastPriceProvenance(provider, modelId),
+    };
+  }
+  const overlay = findExpectedPriceOverlay(overlays === EXPECTED_PRICE_OVERLAYS ? pricingFamilyProvider(provider) : provider, modelId, overlays);
+  // A curated overlay is an opened vendor page or a mapping of one. Those rows
+  // keep their existing precedence (bundle first, then overlay); the live
+  // catalog only replaces the bundle where no curated row speaks.
+  const curatedOverlay = overlay !== undefined && overlay.status !== "unverified"
+    && validCost4(overlay.cost4) && hasNonZeroCost(overlay.cost4);
+  // The generated bundle is a frozen opencode snapshot; a live models.dev row
+  // is newer than that snapshot but still catalog-derived, hence
+  // `verified-derived` (priced, estimated) rather than an official correction.
+  const live = curatedOverlay ? undefined : modelsDevPublishedPrice(pricingFamilyProvider(provider), modelId);
+  if (live && validCost4(live.price) && hasNonZeroCost(live.price)) {
+    return {
+      provider,
+      modelId,
+      modelsDevProvider: live.provider,
+      cost4: multiplyCursorFastCost(live.price, provider, modelId),
+      source: "modelsdev",
+      sourceRef: `https://models.dev/${live.provider}`,
+      status: "verified-derived",
+      ...cursorFastPriceProvenance(provider, modelId),
+    };
+  }
   const metadataProvider = resolveMetadataProvider(provider);
   const bundled = metadataProvider
     ? getModelMetadata(metadataProvider, modelId)
@@ -313,7 +351,6 @@ function resolveMatchedPriceExact(
       ...cursorFastPriceProvenance(provider, modelId),
     };
   }
-  const overlay = findExpectedPriceOverlay(overlays === EXPECTED_PRICE_OVERLAYS ? pricingFamilyProvider(provider) : provider, modelId, overlays);
   if (!overlay || !validCost4(overlay.cost4) || !hasNonZeroCost(overlay.cost4)) {
     if (options.allowModelLevelFallback === false) return null;
     const fallback = resolveModelLevelPrice(provider, modelId);
@@ -371,13 +408,128 @@ function userOverlayMatch(
   };
 }
 
+/**
+ * Canonical vendors whose published list price a model follows regardless of
+ * who serves it. Reseller rows (Azure, Bedrock, gateways) are deliberately
+ * absent: their markup or discount is not the model's official price.
+ */
+const OFFICIAL_VENDORS = [
+  "anthropic", "openai", "google", "moonshot", "minimax", "deepseek", "xai",
+  "zai", "mistral", "cerebras", "xiaomi", "meta",
+] as const;
+const OFFICIAL_VENDOR_SET = new Set<string>(OFFICIAL_VENDORS);
+const OFFICIAL_VENDOR_ALIASES: Record<string, string> = {
+  "x-ai": "xai",
+  "deepseek-ai": "deepseek",
+  "meta-llama": "meta",
+};
+
+/** Canonical vendor named by a routing prefix, or undefined when it is not one. */
+function officialVendorKey(prefix: string): string | undefined {
+  const key = modelsDevProviderKey(prefix);
+  const normalized = OFFICIAL_VENDOR_ALIASES[key] ?? key;
+  return OFFICIAL_VENDOR_SET.has(normalized) ? normalized : undefined;
+}
+
+/** Look up one canonical vendor by the bare model name. */
+function officialVendorPrice(vendor: string, modelId: string): MatchedPrice | null {
+  const variants = modelId.includes(".") ? [modelId, modelId.replaceAll(".", "-")] : [modelId];
+  for (const id of variants) {
+    const live = modelsDevPublishedPrice(vendor, id);
+    if (live && hasNonZeroCost(live.price)) {
+      return {
+        provider: vendor,
+        modelId: id,
+        modelsDevProvider: live.provider,
+        cost4: live.price,
+        source: "modelsdev",
+        sourceRef: `https://models.dev/${live.provider}`,
+        status: "verified-derived",
+      };
+    }
+    const bundled = getModelMetadata(vendor, id);
+    if (bundled?.cost && validCost4(bundled.cost) && hasNonZeroCost(bundled.cost)) {
+      return {
+        provider: vendor,
+        modelId: id,
+        jawcodeProvider: vendor,
+        cost4: bundled.cost,
+        source: "jawcode",
+        status: "verified-derived",
+      };
+    }
+  }
+  return null;
+}
+
+function officialModelPrice(provider: string, modelId: string, bare: string): MatchedPrice | null {
+  const official = findOfficialModelPrice(bare);
+  if (!official || !validCost4(official.cost4) || !hasNonZeroCost(official.cost4)) return null;
+  return {
+    provider,
+    modelId,
+    cost4: official.cost4,
+    source: "expected",
+    sourceRef: official.source,
+    verifiedAt: official.verifiedAt,
+    status: official.status,
+  };
+}
+
+/** Official vendor price for a `<vendor>/<model>` routing id, ignoring the serving provider. */
+function officialPrefixedPrice(provider: string, modelId: string): MatchedPrice | null {
+  const firstSlash = modelId.indexOf("/");
+  if (firstSlash <= 0 || firstSlash !== modelId.lastIndexOf("/")) return null;
+  const vendor = officialVendorKey(modelId.slice(0, firstSlash));
+  if (!vendor) return null;
+  const bare = modelId.slice(firstSlash + 1);
+  const found = officialVendorPrice(vendor, bare) ?? officialModelPrice(provider, modelId, bare);
+  return found ? { ...found, provider, modelId } : null;
+}
+
+/**
+ * Provider-independent fallback: price the model, not the route. A single
+ * routing prefix names the vendor whose list price the model follows
+ * (`deepseek/deepseek-v4.1-flash`); a bare id is searched against every
+ * canonical vendor. A prefix that disagrees with the model
+ * (`openai/claude-opus-4-6`) stays unpriced rather than borrowing another
+ * vendor's row.
+ */
 function resolveModelLevelPrice(provider: string, modelId: string): MatchedPrice | null {
-  // Exact first; then dot->dash variant for providers that spell vendor ids with
-  // dots where the catalog uses dashes (kiro "claude-opus-4.6" vs anthropic
-  // "claude-opus-4-6"). No fuzzy matching beyond this one normalization.
-  const found = findVendorCostByModelId(modelId)
-    ?? (modelId.includes(".") ? findVendorCostByModelId(modelId.replaceAll(".", "-")) : undefined)
-    ?? vendorPrefixedCost(modelId);
+  const firstSlash = modelId.indexOf("/");
+  const lastSlash = modelId.lastIndexOf("/");
+  if (firstSlash !== -1 && firstSlash === lastSlash) {
+    const vendor = officialVendorKey(modelId.slice(0, firstSlash));
+    if (vendor) {
+      const bare = modelId.slice(firstSlash + 1);
+      const found = officialVendorPrice(vendor, bare);
+      if (found) return { ...found, provider, modelId };
+      return officialModelPrice(provider, modelId, bare);
+    }
+  } else if (firstSlash === -1) {
+    for (const vendor of OFFICIAL_VENDORS) {
+      const found = officialVendorPrice(vendor, modelId);
+      if (found) return { ...found, provider, modelId };
+    }
+    const official = officialModelPrice(provider, modelId, modelId);
+    if (official) return official;
+  }
+  // Legacy exact lookup covers bundle rows whose ids are not vendor-prefixed
+  // (`global.anthropic.…`) and the aggregator prefix check keeps a mismatched
+  // prefix fail-closed.
+  const direct = findVendorCostByModelId(modelId)
+    ?? (modelId.includes(".") ? findVendorCostByModelId(modelId.replaceAll(".", "-")) : undefined);
+  if (direct) {
+    return {
+      provider,
+      modelId,
+      jawcodeProvider: direct.provider,
+      cost4: direct.cost,
+      source: "jawcode",
+      status: "verified-derived",
+    };
+  }
+  const found = vendorPrefixedCost(modelId);
   if (!found) return null;
   return {
     provider,

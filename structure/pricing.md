@@ -32,6 +32,52 @@ when the submitted base rates equal the old baseline. Unrelated saves still adop
 the replacement row, so a base-rate edit never silently drops a Flat or Custom policy; its receipt
 must echo the same policy, with absent and `automatic` treated as equal.
 
+## Live models.dev pricing
+
+`src/usage/models-dev-pricing.ts` keeps a bounded in-memory copy of the public
+`https://models.dev/api.json` catalog and a per-config-directory cache at
+`models-dev-pricing-cache.json` (24-hour TTL, 16 MiB body cap, five-second
+deadline, redirects refused, coalesced refresh, stale data retained offline).
+`GET /api/usage` and `GET /api/usage/model-price-candidates` call
+`ensureModelsDevPricing()`; a first visit waits for the catalog, later visits
+serve the cached copy while a stale one refreshes in the background. A test
+or embedder can set `OPENCODEX_MODELS_DEV_PRICING=0`; `tests/preload.ts` does,
+and the catalog suites seed `seedModelsDevPricingForTests()` instead.
+
+Resolution order in `src/usage/cost.ts` is user `modelCosts`, an exact official
+correction (`VERIFIED_PRICE_OVERRIDES`), then either a curated expected-price
+overlay or — when no curated row exists — the live models.dev row before the
+generated opencode bundle. Curated overlays retain their legacy position behind
+the bundle and win where the bundle has no row. A live row carries
+`source: "modelsdev"`, `modelsDevProvider`, and `status: "verified-derived"`
+because it is a public catalog copy, not an opened vendor page. The live catalog
+therefore cannot reduce Venice's 1.25x mapping or a curated long-context
+correction.
+`modelsDevPricingVersion()` joins `userCostOverlayVersion()` in the retained
+aggregate and summary cache identities, so a refresh reprices existing rows
+instead of serving totals computed from the previous catalog.
+
+A `<vendor>/<model>` id is priced from that vendor before the serving provider's
+own row, so a reseller or custom route cannot substitute its list price for the
+model's official one. A single prefix must name a canonical vendor
+(`deepseek/deepseek-v4.1-flash` → vendor `deepseek`, bare
+`deepseek-v4.1-flash`); a bare id keeps exact-provider resolution first and is
+then searched across every canonical vendor. Lookup per vendor is the live models.dev vendor row, then the bundled
+vendor row, then the provider-independent `OFFICIAL_MODEL_PRICES` table for ids
+the vendor page lags. `deepseek-v4.1-flash` is registered there (with a matching
+`deepseek` overlay row) so a custom provider and the OpenCode Go surface price
+from DeepSeek's official peak-window list. A prefix that disagrees with the
+model (`openai/claude-opus-4-6`) fails closed, and reseller rows (Azure,
+Bedrock, aggregators) are not canonical vendors: a model id that only a
+reseller publishes stays unpriced until the operator chooses a listing. The Usage Models table's **Bill as** control
+(`gui/src/components/BillAsDialog.tsx`) asks
+`GET /api/usage/model-price-candidates` for at most ten fuzzy-ranked listings,
+then writes the chosen four-rate tuple through the existing
+`PUT /api/providers/{provider}/model-costs` contract (or `cost: null` for
+automatic pricing). `tests/usage/usage-models-dev-pricing.test.ts` covers refresh,
+cache reload, aliases, ranking, precedence and memo invalidation;
+`tests/server/api-usage.test.ts` covers the candidate endpoint.
+
 ## Dialog and estimates
 
 `gui/src/components/ModelPriceDialog.tsx` edits base rates plus Automatic, Flat rate or Custom

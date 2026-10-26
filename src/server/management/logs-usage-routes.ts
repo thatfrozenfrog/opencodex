@@ -71,6 +71,7 @@ import { getRequestLogEntries, queryRequestLogs, type RequestLogEntry } from "..
 import { decodeRequestLogCursor, selectRequestLogPoll } from "../request-log-cursor";
 import { estimateComboCost, estimateRequestCost, normalizeCostTokens, tokensPerSecond } from "../../usage/cost";
 import { userCostOverlayVersion } from "../../usage/user-cost-overlays";
+import { ensureModelsDevPricing, modelsDevPricingVersion, searchModelsDevPrices } from "../../usage/models-dev-pricing";
 import type { PersistedUsageAttempt } from "../../usage/log";
 import { isAllowedRequestOrigin, jsonResponse, providerManagementConfigError, publicProviderBaseUrl, safeConfigDTO } from "../auth-cors";
 import { applySystemEnvToggle } from "../system-env";
@@ -185,6 +186,21 @@ export async function handleLogsUsageRoutes(ctx: ManagementContext): Promise<Res
     return jsonResponse(setDebugSettings(partial));
   }
 
+  if (url.pathname === "/api/usage/model-price-candidates" && req.method === "GET") {
+    const model = (url.searchParams.get("model") ?? "").trim();
+    if (!model || model.length > 256) {
+      return jsonResponse({ error: "model must be 1-256 characters" }, 400);
+    }
+    const rawLimit = url.searchParams.get("limit");
+    const limit = rawLimit === null ? 10 : Number(rawLimit);
+    if (!Number.isFinite(limit) || limit < 1) {
+      return jsonResponse({ error: "limit must be a positive number" }, 400);
+    }
+    await ensureModelsDevPricing();
+    const provider = url.searchParams.get("provider")?.trim() || undefined;
+    return jsonResponse({ model, candidates: searchModelsDevPrices(model, limit, provider) });
+  }
+
   if (url.pathname === "/api/usage" && req.method === "GET") {
     if (url.searchParams.get("jev") === "1") {
       const range = parseRange(url.searchParams.get("range"));
@@ -247,6 +263,10 @@ export async function handleLogsUsageRoutes(ctx: ManagementContext): Promise<Res
     };
     const filterRequested = window !== undefined || [filter.provider, filter.model, filter.apiKeyId]
       .some(value => typeof value === "string" && value.trim() !== "");
+    // Live models.dev pricing replaces the frozen bundled snapshot for rows it
+    // publishes. A first visit waits for the catalog; later visits refresh a
+    // stale cache in the background and keep serving it.
+    await ensureModelsDevPricing();
     const now = Date.now();
     try {
       const cacheKey = `${range}:${surface}`;
@@ -263,6 +283,7 @@ export async function handleLogsUsageRoutes(ctx: ManagementContext): Promise<Res
         && cached.identityKey === identityKey
         && cached.maxReadBytes === effectiveReadLimit
         && cached.overlayVersion === userCostOverlayVersion()
+        && cached.catalogVersion === modelsDevPricingVersion()
         && cached.timeZone === observedTimeZone
         && now < cached.freshUntil
         && now < cached.expiresAt
@@ -313,6 +334,7 @@ export async function handleLogsUsageRoutes(ctx: ManagementContext): Promise<Res
       const currentOverlayVersion = userCostOverlayVersion();
       const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (currentOverlayVersion !== aggregate.overlayVersion
+        || modelsDevPricingVersion() !== aggregate.catalogVersion
         || currentTimeZone !== aggregate.timeZone) {
         // The aggregate is internally consistent, but an input changed after
         // its scan. Serve it uncached and let the next request rebuild.
@@ -337,6 +359,7 @@ export async function handleLogsUsageRoutes(ctx: ManagementContext): Promise<Res
             identityKey: snapshotIdentity,
             maxReadBytes: effectiveReadLimit,
             overlayVersion: aggregate.overlayVersion,
+            catalogVersion: aggregate.catalogVersion,
             timeZone: aggregate.timeZone,
             expiresAt: usageSummaryExpiresAt(nextRange, nextSurface, now),
             freshUntil,

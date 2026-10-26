@@ -19,6 +19,8 @@ export interface UsageSummaryCacheEntry {
   maxReadBytes: number;
   /** userCostOverlayVersion() when the summary was computed; overlay edits invalidate the entry. */
   overlayVersion: number;
+  /** modelsDevPricingVersion() when the summary was computed; a catalog refresh invalidates it. */
+  catalogVersion?: number;
   /** Local calendar zone used to build day/range buckets. */
   timeZone: string;
   expiresAt: number;
