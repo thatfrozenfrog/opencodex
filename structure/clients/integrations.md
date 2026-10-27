@@ -3,7 +3,6 @@
 Shared parsing and streaming follow the [request-copy](../transports/byte-accounting.md#request-copy-accounting) and [stream-buffer accounting](../transports/byte-accounting.md#stream-buffer-accounting) contracts.
 
 The client-integration subsystem writes one generated OpenCodex provider contribution into a third-party client's existing config without taking ownership of the rest of that file. Its core promise is reversibility: apply snapshots first, writes atomically, records exactly what it owns, and refuses refresh, disable, or restore when the current file cannot be classified safely. Qoder specifics live in [`clients/qoder.md`](qoder.md). Managed client targets are inspected without following a final symbolic link, and their atomic replacement addresses the named directory entry rather than resolving that link again at commit. Uninstall runs the same coordinated disable path for every strict ownership record before removing OpenCodex state, including the legacy Aside owner and every child profile store under `integrations/aside-profiles/<profileId>/`. `src/cli/uninstall-integrations.ts` validates all stores and registered Aside paths before mutation; `src/integrations/aside-profile-context.ts` supplies the guarded child stores. An unreadable record, conflict, or failed compensation aborts config removal and retains remaining recovery state. Earlier successful disables are not rolled back; failed compensation can leave an intermediate client file. Inspect the reported client files and retained snapshots before retrying; preserved recovery state does not prove restoration completed.
-
 > Decision record: [ADR-0107](../decisions/ADR-0107-uninstall-integration-recovery.md)
 
 Shared response support has a separate [bounded ingestion contract](../transports/inventory.md#bounded-response-ingestion-and-orcarouter-login):
@@ -16,6 +15,7 @@ parsing and ownership rules below.
 | Module | Responsibility |
 | --- | --- |
 | `src/clients/config-export.ts` | Pure per-client config builders and the exact managed fragments each client receives. It never writes files. |
+| `src/clients/reasoning-controls.ts` | Ingress compatibility for effort-enum clients: `resolveThinkingEnabled(provider, modelId, options)` decodes toggle aliases into `thinkingEnabled` before strength policy runs, preserving an explicit thinking choice and canonical provider defaults/maps. `normalizeThinkingOptions` removes the alias when real effort is unsupported. |
 | `src/integrations/registry.ts` | Canonical config/detection paths, current-provider-store declarations, source-preserving YAML declarations, writer-lock behavior, and client IDs. |
 | `src/integrations/target.ts` | Which file one operation reads, writes and records, and whether a write there reaches the client. |
 | `src/integrations/config-io.ts` | Bounded regular-file loading and parsing; production reads reject symlinks and stop after 4 MiB, and writes past the same bound are refused so a mutation cannot strand a file it cannot read back. `src/lib/bounded-file-read.ts` starts its buffer from the opened size and grows only as needed, retaining the limit-plus-one overflow probe when a file grows concurrently and returning only bytes actually read. Values that cannot round-trip through the target serializer are rejected before mutation. |
@@ -79,7 +79,8 @@ defaults as one owned value.
 The request preference is interpreted after initial Chat route selection and before
 concrete dispatch under the [inbound effort contract](../data-planes/inbound-compat.md#droid-request-defaults).
 It never authenticates a client or changes admission policy.
-
+## WorkBuddy editions
+`src/clients/config-export/agent-clients.ts` manages independent `workbuddy` and `workbuddy-ai` roots (`~/.workbuddy/models.json`, `~/.workbuddy-ai/models.json`). Both honor `WORKBUDDY_CONFIG_DIR`, then `CODEBUDDY_CONFIG_DIR`; relative overrides refuse. Rows retain proxy IDs, a full Chat Completions URL, a loopback placeholder and declared metadata. Ownership selects each `id` in object-form `models` or legacy root arrays. Foreign settings stay untouched; `validateApply` refuses hiding `availableModels` restrictions during apply/refresh; status, disable and Undo remain available. An unrepresentable model ID also refuses apply/refresh; its empty desired contribution lets status/disable verify and remove only recorded ownership, preserving foreign-edit checks. Project overrides may shadow user settings. Shared snapshots, drift checks and owned-catalog refresh apply. No client IO runs on inference paths. Doubao Desktop and Devin have no verified arbitrary-provider configuration contract and no managed integration.
 ## Cursor installed capability reads
 
 `src/integrations/cursor-effort-table.ts` reads the installed agent bundle through one regular-file
@@ -124,6 +125,7 @@ client registry + export context
   -> atomic write
   -> ownership record + operation journal
 ```
+A generated contribution that raises `UnrepresentableSelectorError` produces an `unsafe` / `unresolvable-path` status for that client. The shared reader and mutation observer catch only that typed refusal: preview returns an unsafe plan with `canApply: false`, and mutations return the existing unsafe refusal (HTTP 409). Other clients in the status collection remain visible, and unexpected construction errors still propagate.
 
 Status and mutation must use the same classifier. A special case added only to a status endpoint
 would be misleading because refresh or disable could still reject the same file; a special case
@@ -239,8 +241,7 @@ than reviving a cleared capability. Exporters do not invent a medium default for
 
 `src/server/management/model-row-export-metadata.ts` resolves custom-row inheritance without
 backfilling the stored override fields the editor reads. Management rows attach `exportMetadata`;
-its presence makes even an absent default authoritative, so export/launcher projections cannot
-fall back to the picker's synthesized medium/low preference. Declared empty ladders survive.
+its presence makes even an absent default authoritative; the shared `resolveExportReasoningAxes` helper in `src/clients/config-export/reasoning-metadata.ts` keeps management and CLI exports aligned, so export/launcher projections cannot fall back to the picker's synthesized medium/low preference. Declared empty ladders survive. Management and CLI export projections preserve independent `supportsReasoning`, `supportsThinkingToggle`, `supportsReasoningEffort` and `defaultThinkingEnabled` fields, including explicit false; absent axes remain unknown. An empty effort declaration does not disable a declared thinking toggle. `supportsReasoningEffort: false` prevents legacy ladders from advertising strengths. Metadata projections carry capability truth without synthesizing effort choices. At the Codex, OpenCode and Kilo effort-enum boundaries only, toggle-only models encode off/on as `none`/`high`, with their default taken from `defaultThinkingEnabled`; fixed reasoning creates no picker, while effort-only and combined controls retain real strengths without synthetic top tiers. Legacy unknown capabilities keep their prior behavior: positive effort support alone, which can be inferred from an existing ladder, does not opt a Codex row out of its previous max/ultra synthesis. Explicit toggle-axis declarations and negative reasoning/effort capabilities still constrain that projection exactly. Legacy variant maps disable client-generated choices that the model does not support; client-owned labels may still display “High”. `tests/clients/client-export-reasoning-controls.test.ts` covers generic capability combinations and Codex projection, `tests/clients/client-export-effective-metadata.test.ts` covers routed/custom projection parity, and `tests/server/api-catalog-route.test.ts` checks independent public API flags without a fake effort list and client exports with upstream fetches stubbed.
 OpenCode V1 and Kilo use model `options` defaults and variant maps; OpenCode V2 uses model
 `settings` defaults and native variant arrays with `@opencode/ai/providers/openai-compatible`.
 Declared variants, including `none`, override those defaults. V2 always writes an array, empty
@@ -282,8 +283,7 @@ explicit catalog modality list containing `image` becomes `supports_vision: true
 non-empty list without `image` becomes `false`; an absent or empty modality list keeps an empty
 model object so Hermes receives no guessed capability. OpenCodex does not emit `supports_video`
 because its authoritative input-modality vocabulary currently has no video value.
-
-> Decision record: [ADR-0090](../decisions/ADR-0090-hermes-model-capabilities.md)
+> Decision record: [ADR-0090](../decisions/ADR-0090-hermes-model-capabilities.md). Profile selection and per-profile ownership: [Hermes Profiles](hermes.md).
 
 ## Hermes session affinity
 
@@ -317,7 +317,6 @@ sort JSON object keys while preserving array order. Existing records without the
 fall back to comparing the recorded generated contribution when the catalog has not moved. This
 keeps old records readable while preventing a client's formatting-only key reorder from
 masquerading as a protected edit.
-
 > Decision record: [ADR-0091](../decisions/ADR-0091-ownership-axes.md)
 
 Clients normally protect every field in every recorded fragment. A client that writes documented,
@@ -346,7 +345,6 @@ Records written before the protected fingerprint existed can recover from ZCode-
 only while the desired contribution is still identical to the one recorded at apply time. If the
 catalog also changed, the old record cannot distinguish catalog drift from a foreign edit and must
 fail closed. A successful refresh writes the new operation-scoped policy.
-
 > Decision record: [ADR-0092](../decisions/ADR-0092-zcode-runtime-metadata.md)
 
 ## A store the client no longer reads
@@ -487,7 +485,7 @@ Link mode and destinations aliasing Pi's default, configured or preserved origin
 | Variant | Its own evidence | opencodex surface |
 | --- | --- | --- |
 | Pi-based omo (senpi engine) | `~/.omo/agent`, or `OMO_CODING_AGENT_DIR` / `SENPI_CODING_AGENT_DIR` / `PI_CODING_AGENT_DIR` (`omoAgentDir()`) | the `omo` file integration and tab, `providers.opencodex` in `models.json` |
-| Codex-based omo (LazyCodex) | `[plugins."omo@sisyphuslabs"] enabled = true` in `$CODEX_HOME/config.toml` plus `lazycodex-install.json` in an installed copy under `$CODEX_HOME/plugins/cache/sisyphuslabs/omo/<version>/` (`detectLazyCodex()` in `src/clients/lazycodex.ts`) | role model pins and the omo.jsonc mirror below, in their own section of the omo tab |
+| Codex-based omo (LazyCodex) | `[plugins."omo@sisyphuslabs"] enabled = true` in `$CODEX_HOME/config.toml` plus `.codex-plugin/plugin.json` or `lazycodex-install.json` in an installed copy under `$CODEX_HOME/plugins/cache/sisyphuslabs/omo/<version>/` (`detectLazyCodex()` in `src/clients/lazycodex.ts`) | role model pins and the omo.jsonc mirror below, in their own section of the omo tab |
 | OpenCode-based omo (oh-my-opencode) | its config under OpenCode | none; nothing here reads or writes it |
 
 `~/.omo` alone identifies none of them: Pi-based omo and LazyCodex both use it.
