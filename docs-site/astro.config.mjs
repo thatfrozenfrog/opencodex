@@ -135,6 +135,7 @@ export default defineConfig({
               items: [
                 { label: "Overview", slug: "reference/configuration" },
                 { label: "Providers", slug: "reference/configuration/providers" },
+                { label: "Catalog", slug: "reference/configuration/catalog" },
                 { label: "Routing", slug: "reference/configuration/routing" },
                 { label: "Agents", slug: "reference/configuration/agents" },
                 { label: "Server & Runtime", slug: "reference/configuration/server" },

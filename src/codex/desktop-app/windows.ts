@@ -224,7 +224,17 @@ export const windowsDesktopAppAdapter: DesktopAppAdapter = {
     exec(resolveTrustedWindowsTaskkillExe(), ["/PID", String(root.pid), "/T", "/F"], POWERSHELL_PROBE_OPTIONS);
   },
 
-  captureRelaunchContext(_exec, _install, _processes): Record<string, string> {
+  captureRelaunchContext(_exec, _install, processes): Record<string, string> {
+    const members = new Set(processes.map(entry => entry.pid));
+    for (const entry of processes) {
+      if (members.has(entry.parentPid)) continue;
+      if (entry.commandLine !== undefined && entry.commandLine.trim() === "") {
+        throw new Error("desktop_launch_context_unavailable");
+      }
+      if (/(?:^|\s)"?--proxy-pac-url=/.test(entry.commandLine ?? "")) {
+        throw new Error("desktop_compatibility_relaunch_not_supported");
+      }
+    }
     return {};
   },
 

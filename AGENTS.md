@@ -28,8 +28,9 @@ Bun-native TypeScript with no separate server compile step.
   seeds in `seeds.json` place a conventionally named file until then.
   History: `devlog/_fin/260905_test_modularization_and_windows/`.
 - `gui/` — React + Vite dashboard; packaged output is served from `gui/dist`.
-- `app/` — native macOS WidgetKit extension bundled into the Tauri desktop app;
-  `MenuBarCore` is its snapshot model/formatting layer. Its tests are
+- `app/` — the Swift `NativeTray` companion for the Tauri desktop app. This fork
+  keeps only `NativeTray`; the WidgetKit extension and the `MenuBarCore`
+  snapshot layer are pruned (see "Syncing from upstream"). Its tests are
   executables, not XCTest bundles — Command Line Tools ships neither a usable
   XCTest module nor the swift-testing runtime.
 - `docs-site/` — public docs (Astro + Starlight), deployed to GitHub Pages.
@@ -195,7 +196,7 @@ it binds you regardless of which mechanism is within reach.
 
 ```bash
 bun install
-bun run typecheck      # bun x tsc --noEmit (strict)
+bun run typecheck      # bun check --no-script --noEmit (strict)
 bun run test:changed   # import-graph tests against the resolved `dev` merge base
 bun run test           # full tests/ suite (default before review)
 bun run lint:gui       # GUI eslint
@@ -374,6 +375,20 @@ than nudged.
   add `ci:full` for changes it cannot see (subprocesses, files read as data, generated output).
 - Full cross-platform (macOS/Windows) CI runs **only** via manual
   `workflow_dispatch` and on push to `main`/`preview` (release lines).
+- A manual `lane=all` dispatch is a **batch check on `dev`**, never a per-PR gate.
+  One run is about 32 jobs (11 Windows, at least 6 macOS, 15 Linux) and six runner-hours, and the
+  account has only five macOS slots (a macOS job can queue), so per-PR dispatches starve
+  every other check. On 2026-10-27, parallel agent lanes dispatched 48 of them in twelve hours (about 13,000
+  runner-minutes). The queue passed 200 runs, and ordinary PR checks waited hours to start.
+  - Merge a pull request, including a Windows- or macOS-sensitive one, on its green PR
+    CI. After a batch of merges, run one `gh workflow run ci.yml --ref dev` as described
+    under "Batched merges". If it is red, stop merging and fix `dev` from that batch.
+  - Do not dispatch `lane=all` for a PR branch unless a maintainer explicitly asks for it
+    on that PR. Even then, run it once, on the exact head about to merge. Never re-dispatch
+    because the head moved (an `origin/dev` merge or a review fix), and never rerun to
+    green. Cancel your own superseded dispatches with `gh run cancel`.
+  - Every description edit or label change starts three event-gate workflows. Batch those
+    edits, and keep the number of agents working pull requests in parallel small.
 - **Never** add a `dev` push trigger, or `pull_request` runs for macOS/Windows
   jobs, to any workflow. PRs that change this policy will be closed.
 
@@ -435,6 +450,73 @@ local hook settings. Contributor review and `main`/`preview` rules remain unchan
 [`MAINTAINERS.md`](./MAINTAINERS.md) is authoritative for review and merge
 policy (approvals, CI requirements, security review, promotion). This file
 summarizes; it never overrides it.
+
+## Syncing from upstream
+
+`origin` is `lidge-jun/opencodex`. This fork prunes deliberately, so an upstream
+sync is **not** a fast-forward of everything upstream ships: it is upstream's
+fixes applied to a smaller tree. Never cherry-pick a hand-picked SHA list — the
+commits are entangled (one of them touches 130 files), and a partial pick leaves
+the test-layout registry, the structure invariants, and the i18n catalogs
+describing a tree that does not exist. Merge, then keep the prune.
+
+**Take from upstream:** security and correctness fixes (file-identity/stat
+handling, Windows path and cache admission, OAuth and credential boundaries,
+update and restart guards, Codex and remote-workspace comparisons), provider and
+model-catalog updates, and every test that guards them. This is the part that
+must not be skipped for convenience; a merged tail that drops a security fix is
+worse than no merge at all.
+
+**Do not take back** (removed by this fork; an upstream merge must not resurrect
+any of it):
+
+- the advisor subsystem — `src/advisor/`, `gui/src/pages/advisor/`, the
+  `advisor-*` tests, `structure/advisor.md`
+- the subagents workspace and delegation flow, and `applySubagentModelFallback`
+- the ChatGPT desktop app-server shim and the `chatgpt-desktop` config surface
+- the OMP usage bridge and the OMP YAML source
+- the macOS Swift widget extension — `app/Sources/OpenCodexWidget/`,
+  `app/Sources/MenuBarCore/`, `app/Sources/MenuBarCoreTests/` — and
+  `desktop/scripts/build-widget.sh`. `app/Sources/NativeTray/` stays.
+- every GUI locale except `en`, and the translated `docs-site/` trees
+
+Shared security infrastructure is not the removed feature. Retain the Codex
+bundle-trust helpers under `src/chatgpt/app-server-shim/` and the internal
+admission/capability helpers when retained callers require them; do not restore
+the shim launcher, filter, Advisor UI, or Advisor execution flow.
+
+**Procedure.**
+
+1. Commit or stash local work first. A merge is not the place to discover it.
+2. `git merge --no-commit --no-ff origin/main`, then resolve per file. For a file
+   deleted here and modified upstream (`DU`), keep it deleted unless a retained
+   runtime now needs it for correctness or security; review its callers first.
+3. For a content conflict (`UU`), preserve both retained fork behavior and
+   relevant upstream fixes; strip additions used only by pruned features. **Never** blanket `git checkout --theirs` across every
+   conflicted path: it discards fork-side work and reintroduces pruned imports.
+   One such sweep silently restored the advisor subsystem into
+   `src/server/chat-completions.ts` and `src/server/responses/sidecar-execution.ts`.
+   Resolve hunks, not whole files.
+4. `gui/src/i18n/en.ts` is merged, never deleted — it is the only supported
+   catalog. Its `...desktopCompatibilityCopy()` call takes **no argument** here
+   (upstream's takes a `Locale`). Keep fork-only keys, drop `advisor.*` and other
+   pruned-surface keys.
+5. Re-register nothing for a deleted test. Drop its entry from
+   `scripts/test-layout/layout*.json`, from
+   `tests/fixtures/test-layout-expected*.json`, and any `file-size-baseline.json`
+   cap, or the layout guard reports a file it cannot resolve.
+6. Run `bun run typecheck`, `bun run structure:check`, `bun run privacy:scan`,
+   `bun run build:gui`, and the focused tests for each subsystem the merge
+   touched. `structure:check` enumerates the **git index**, so stage deletions
+   before running it.
+
+**Ratchets do not move for a merge.** `tests/fixtures/file-size-baseline.json`
+only ever moves down, and `updateBaseline` uses `Math.min`, so a cap cannot be
+raised. A merged file over its cap is fixed by moving code into a sibling file
+and registering it in both the layout map and the expected-layout fixture — never
+by editing the number. Counts in generated documentation are derived, not
+restated; two branches each writing the same plausible integer is exactly how
+those counts drift.
 
 ## Review guidelines
 

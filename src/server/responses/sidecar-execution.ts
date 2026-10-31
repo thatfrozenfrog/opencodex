@@ -191,15 +191,15 @@ export async function executeResponsesSidecars(
   // LOCAL PATCH (runturn-websearch): runTurn adapters run their own web-search
   // loop inside executeResponsesRunTurn (src/web-search/run-turn-loop.ts); the
   // fetch-path loop below stays non-runTurn-only.
-  const wsPlan = !routedCompaction
-    ? planWebSearch(config, parsed, false, route.provider, route.modelId, openAiSidecar, {
+  const wsPlan = routedCompaction
+    ? undefined
+    : planWebSearch(config, parsed, false, route.provider, route.modelId, openAiSidecar, {
       admission: options.admission, codexAuthPolicy: options.codexAuthPolicy, providerName: route.providerName,
-    })
-    : undefined;
-  const imgPlan = !routedCompaction ? await planImageBridge(config, parsed, route.provider) : undefined;
+    });
+  const imgPlan = routedCompaction ? undefined : await planImageBridge(config, parsed, route.provider);
   // Replayed search pairs call the synthetic web_search tool only the sidecar declares (#7269).
   if (!wsPlan) stripReplayedSearchPairs(parsed);
-  const vidPlan = !routedCompaction ? await planVideoBridge(config, parsed, route.provider) : undefined;
+  const vidPlan = routedCompaction ? undefined : await planVideoBridge(config, parsed, route.provider);
   const canRunWebSearch = !!wsPlan && !transportState.adapter.runTurn;
   let sidecarOutputStarted = false;
   const sidecarHasCommittedOutput = () => sidecarOutputStarted
@@ -295,8 +295,8 @@ export async function executeResponsesSidecars(
         return null;
       }
       recoveryKind = "oauth-account-403";
-      if (!options.comboInitialSend) sendBudgetState.pendingHopPermit = hop.permit;
-      else sidecarBudget.ownCredentialHop(hop.permit);
+      if (options.comboInitialSend) sidecarBudget.ownCredentialHop(hop.permit);
+      else sendBudgetState.pendingHopPermit = hop.permit;
     }
     const rotated = !originalResponse || originalResponse.status === 429
       ? rotateProviderTransportOn429(config, route.providerName, route.provider, {
@@ -403,8 +403,9 @@ export async function executeResponsesSidecars(
         hop.permit?.release();
         return null;
       }
-      recoveryKind = originalResponse?.status === 401 ? "oauth-401"
-        : originalResponse?.status === 403 ? "oauth-account-403" : "anthropic-oauth-429";
+      recoveryKind = "anthropic-oauth-429";
+      if (originalResponse?.status === 401) recoveryKind = "oauth-401";
+      else if (originalResponse?.status === 403) recoveryKind = "oauth-account-403";
       sidecarBudget.ownCredentialHop(hop.permit, (canRunWebSearch || !!imgPlan || !!vidPlan) && transportState.adapter.name === "anthropic");
     } else {
       // No key pool, no generic OAuth roster, no Anthropic pool could produce a replacement
@@ -446,7 +447,7 @@ export async function executeResponsesSidecars(
       && !!sendBudgetState.adapterDispatchBudget
       && sendBudgetState.adapterDispatchBudget.spendEnforced !== true);
   const thinkingReceipt = (request: AdapterRequest, adapter: ProviderAdapter, recovery?: AttemptRecoveryKind) =>
-    adapter.name !== "anthropic" ? {} : { onPhysicalDispatch: () => {
+    adapter.name === "anthropic" ? { onPhysicalDispatch: () => {
       if (recovery === "opaque-blob-rejection") {
         const decision = sendBudgetState.adapterDispatchBudget?.reserveDispatch({
           sendClass: "repair", targetKey: `${route.providerName}|${request.url}|${route.modelId}`,
@@ -466,7 +467,7 @@ export async function executeResponsesSidecars(
           sendBudgetState.noteInitialDispatch(prepaid);
         }
       }
-    } };
+    } } : {};
   // A loop's hidden rounds before a rotation were spent by the account it left. Bill them to that
   // account's attempt while it is still open; the next send seals it. Declined when that send
   // keeps the account (no new attempt), so the loop's final total still carries them.
@@ -489,13 +490,7 @@ export async function executeResponsesSidecars(
     // The video bridge activates from config and injects a tool — it also needs streaming
     // (the loop returns SSE). For video-only (no imgPlan) on a non-streaming request, skip
     // the bridge entirely so enabling the feature doesn't break ordinary non-streaming traffic.
-    if (!parsed.stream) {
-      if (imgPlan) {
-        releaseSearchProbeLease();
-        return formatErrorResponse(400, "invalid_request_error", "image bridge requires stream=true");
-      }
-      // Video-only: skip bridge for non-streaming requests
-    } else {
+    if (parsed.stream) {
     // Replace any pre-existing image_gen/video_gen aliases instead of appending duplicate wire names.
     const priorTools = parsed.context.tools ?? [];
     const bridgeTools = [...priorTools.filter(t => {
@@ -531,8 +526,12 @@ export async function executeResponsesSidecars(
       options.codexWsRuntimeIdentity,
       { providerName: route.providerName, modelId: route.modelId, ...sidecarBudget.fetchOptions(transportState.adapter) },
     );
+    let bridgeMaxRounds = config.images?.videoMaxRounds ?? 2;
+    if (imgPlan) bridgeMaxRounds = config.images?.maxRounds ?? 3;
+    if (imgPlan && vidPlan) bridgeMaxRounds = Math.min(config.images?.maxRounds ?? 3, config.images?.videoMaxRounds ?? 2);
     const imgLoopResponse = await runWithImageBridge({
       parsed, adapter: transportState.adapter,
+      chatRawReasoningVisible: options.chatRawReasoningVisible,
       ...(transportState.adapter.name === "anthropic" ? { thinkingRecovery } : {}),
       clientToolCatalogRestriction: route.provider.authMode === "forward" ? undefined : requestState.clientToolCatalogRestriction,
       incomingMeta: { headers: requestState.selectedForwardHeaders, providerName: route.providerName, abortSignal: options.abortSignal, translatorBudget, ...(options.comboInitialSend ? { providerFetch: imageProviderFetch } : {}), ...sidecarBudget.incomingMeta },
@@ -545,11 +544,7 @@ export async function executeResponsesSidecars(
       onAttemptSend: (recovery?: AttemptRecoveryKind) =>
         transportState.noteRoutedAttemptSend(logCtx.usageLogInputTokens, recovery),
       abortSignal: options.abortSignal,
-      maxRounds: imgPlan && vidPlan
-        ? clampImageMaxRounds(Math.min(config.images?.maxRounds ?? 3, config.images?.videoMaxRounds ?? 2))
-        : imgPlan
-          ? clampImageMaxRounds(config.images?.maxRounds)
-          : clampImageMaxRounds(config.images?.videoMaxRounds ?? 2),
+      maxRounds: clampImageMaxRounds(bridgeMaxRounds),
       connectTimeoutMs: config.connectTimeoutMs ?? 200_000,
       stallTimeoutSec: config.stallTimeoutSec,
       waitForRequestSlot: imageProviderFetch.waitForPacing,
@@ -620,7 +615,10 @@ export async function executeResponsesSidecars(
     }
     releaseSearchProbeLease();
     return imgResponse;
-    } // end else (streaming bridge)
+    } else if (imgPlan) {
+      releaseSearchProbeLease();
+      return formatErrorResponse(400, "invalid_request_error", "image bridge requires stream=true");
+    }
   }
 
   // Web-search sidecar: Codex enabled web_search but this is a routed (non-OpenAI) model that can't
@@ -640,6 +638,7 @@ export async function executeResponsesSidecars(
       })(input, init)) as typeof globalThis.fetch;
     const loopResponse = await runWithWebSearch({
       parsed, adapter: transportState.adapter,
+      chatRawReasoningVisible: options.chatRawReasoningVisible,
       ...(transportState.adapter.name === "anthropic" ? { thinkingRecovery } : {}),
       clientToolCatalogRestriction: route.provider.authMode === "forward" ? undefined : requestState.clientToolCatalogRestriction,
       onIterationEnd: sidecarBudget.releaseUnsentHop,
@@ -723,11 +722,11 @@ export async function executeResponsesSidecars(
       : null;
     if (poolUsageLimit) void loopResponse.body?.cancel().catch(() => {});
     // A provider overflow on the first iteration answers as the main path's context failure (#7316).
-    const wsResponse = poolUsageLimit ? anthropicPoolCooldownResponse(poolUsageLimit, { logCtx })
-      : options.comboAttempt ? loopResponse
-        : sidecarContextOverflowResponse(loopResponse, {
-          stream: parsed.stream, modelId: parsed._responseModelId ?? parsed.modelId, translatorBudget,
-        });
+    let wsResponse = loopResponse;
+    if (poolUsageLimit) wsResponse = anthropicPoolCooldownResponse(poolUsageLimit, { logCtx });
+    else if (options.comboAttempt !== true) wsResponse = sidecarContextOverflowResponse(loopResponse, {
+      stream: parsed.stream, modelId: parsed._responseModelId ?? parsed.modelId, translatorBudget,
+    });
     // Register the sidecar stream as an active turn so drainAndShutdown waits for (or aborts)
     // in-flight web-search turns instead of skipping them during graceful shutdown.
     if (wsResponse.body) {

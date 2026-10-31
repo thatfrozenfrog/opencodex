@@ -26,11 +26,11 @@ These answer in the CLI head and never reach the proxy, so they work with nothin
 | Chapter | Declared capabilities |
 |---|---|
 | [lifecycle](01_surface_lifecycle.md) | 13 |
-| [providers-models](01_surface_providers-models.md) | 49 |
+| [providers-models](01_surface_providers-models.md) | 50 |
 | [accounts](01_surface_accounts.md) | 42 |
 | [agents-routing](01_surface_agents-routing.md) | 59 |
 | [integrations](01_surface_integrations.md) | 41 |
-| [observe-system](01_surface_observe-system.md) | 96 |
+| [observe-system](01_surface_observe-system.md) | 98 |
 | [access-remote](01_surface_access-remote.md) | 33 |
 | [lab](01_surface_lab.md) | 21 |
 
@@ -275,6 +275,14 @@ Original invocation order. These headings preserve links to the previous single-
 
 [Read-oriented task](01_surface_observe-system.md#ocx-system-codex-cli-update-plan)
 
+### `ocx system codex-cli-update apply`
+
+[State-changing task](01_surface_observe-system.md#ocx-system-codex-cli-update-apply)
+
+### `ocx system codex-cli-update status`
+
+[Read-oriented task](01_surface_observe-system.md#ocx-system-codex-cli-update-status)
+
 ### `ocx system codex-restart`
 
 [State-changing task](01_surface_observe-system.md#ocx-system-codex-restart)
@@ -398,6 +406,10 @@ Original invocation order. These headings preserve links to the previous single-
 ### `ocx provider selected`
 
 [State-changing task](01_surface_providers-models.md#ocx-provider-selected)
+
+### `ocx provider import-cc-switch`
+
+[State-changing task](01_surface_providers-models.md#ocx-provider-import-cc-switch)
 
 ### `ocx models list`
 
@@ -1465,6 +1477,6 @@ Original invocation order. These headings preserve links to the previous single-
 
 ## Counts
 
-- declared capabilities: 354
-- of those, state-changing: 215
+- declared capabilities: 357
+- of those, state-changing: 217
 - head-resolved invocations: 2

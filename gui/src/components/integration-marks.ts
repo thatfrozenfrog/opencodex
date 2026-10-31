@@ -68,6 +68,7 @@ export const INTEGRATION_MARKS: Record<OverviewClientId, string | null> = {
   "qoder-cn": CLIENT_MARKS["qoder-cn"] ?? null,
   workbuddy: null,
   "workbuddy-ai": null,
+  t3code: CLIENT_MARKS.t3code ?? null,
 };
 
 /**

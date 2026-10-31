@@ -22,6 +22,7 @@ import { createOpenAIChatAdapter } from "../../src/adapters/openai-chat";
 import { createTranslatorBudget } from "../../src/lib/translator-budget";
 import type { OcxParsedRequest, OcxProviderConfig } from "../../src/types";
 import { repoPath } from "../helpers/repo-root";
+import { PROVIDER_COMPAT_CARRY_FIELDS } from "../../src/server/management/provider-overwrite-carry";
 
 const INSTRUCTION = "Answer in exactly one sentence.";
 
