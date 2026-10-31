@@ -28,13 +28,6 @@ export const CAPABILITIES: readonly Capability[] = [
     usage: "ocx codex-provider <status|allow <id> [--yes]|revoke <id>>",
     details: ["Only local loopback routing for Responses providers using OpenAI authentication is supported. No custom credentials/headers, authless mode or client compaction. Unapproved providers are never changed."],
   },
-  {
-    command: ["chatgpt"],
-    summary: "Experimental ChatGPT app-server shim: launch, restore or status (macOS only).",
-    routes: [], flags: [], mutates: true, json: "none",
-    bannerLines: ["ocx chatgpt <sub>          Experimental app-server shim: launch|restore|status (macOS)"],
-    details: ["Default off; launch requires chatgptDesktop.appServerShim: true. Restore removes the generated launcher."],
-  },
   {"command": ["link","probe"],"summary": "Probe an SSH host fingerprint and OpenCodex version without trusting it.","routes": [{"method": "POST","path": "/api/link/probe"}],"flags": [{"name": "--json","value": "boolean","summary": "Emit alias, fingerprint, key type and version as JSON."}],"mutates": true,"json": "payload","usage": "ocx link probe <alias> [--json]","details": ["Requires loopback admin authority on the Home. Stores only a temporary pending offer; does not persist host trust or issue a link key."]},
   {"command": ["link","add"],"summary": "Connect an SSH Child to this Home after confirming its fingerprint.","routes": [{"method": "POST","path": "/api/link/probe"},{"method": "POST","path": "/api/link/confirm-host"},{"method": "POST","path": "/api/link/apply"}],"flags": [{"name": "--expect-fingerprint","value": "string","summary": "Exact SHA256 host fingerprint; required without an interactive TTY."},{"name": "--json","value": "boolean","summary": "Emit the verified link result as JSON."}],"mutates": true,"json": "payload","usage": "ocx link add <alias> [--expect-fingerprint SHA256:…] [--json]","details": ["Requires loopback admin authority on the Home. Without a fingerprint, requires a TTY and explicit yes after showing the offered fingerprint. Never prints the link key.","Preflights bound Child restart support and curl, connects, restarts once and verifies a fresh authenticated catalog relay before success. Post-connect failures can leave Child config; run ocx disconnect and ocx restart there before retrying."]},
   {
@@ -748,16 +741,6 @@ export const CAPABILITIES: readonly Capability[] = [
       "--expect-link/--expect-hub-key are checked under the lock that selects the sync path. A mismatch writes nothing, never falls back to local providers, exits 5, and ends stderr with {\"phase\":\"child_link_mismatch\"|\"hub_client_mismatch\",\"reason\":...}; reasons are disconnected, invalid_state, disconnect_pending, pending_operation, hub_client, link_client, other_link and other_key. Usage errors exit 2.",
     ],
     usage: "ocx sync [--expect-link <linkId> | --expect-hub-key <apiKeyId>] [--restart-codex] [--restart-app-server-only]",
-  },
-  {
-    command: ["agent","subagents","force"],
-    summary: "Force Claude Code subagents onto one exposed model at the next routed launch; - clears.",
-    routes: [{"method":"PUT","path":"/api/subagent-models"}],
-    flags: [{"name":"--json","value":"boolean","summary":"Emit the saved force setting."}],
-    mutates: true,
-    json: "payload",
-    details: ["Requires Claude Code 2.1.257+. Plain claude, forks, inherit skills, the main model and small-fast sidecars are unaffected."],
-    usage: "ocx agent subagents force <model|-> [--json]",
   },
   {
     command: ["agent","request-user-input"],

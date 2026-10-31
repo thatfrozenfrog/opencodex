@@ -119,7 +119,6 @@ Additional command families:
 
 | Family | Syntax and reference |
 | --- | --- |
-| `ocx chatgpt` | `ocx chatgpt <launch\|restore\|status>` — experimental macOS app-server shim, default off. See [ChatGPT Desktop](/guides/chatgpt-desktop/). |
 | `ocx hub` | `ocx hub invite [--json] [--data-url <origin>] [--management-url <origin>] [--clients codex,claude]` — mint a secret single-use pairing code on a running hub. See [Remote Hub](/guides/remote-hub/); invite requires explicit authorization and its code must not enter an agent transcript. |
 | `ocx inspect` | `ocx inspect <subcommand>` — read effective config, catalog, routing analytics, pacing, key-provider inventory, Codex prompt, client config, star status or Windows tray state. Run `ocx help inspect` for topic links. |
 | `ocx mcode` | `ocx mcode [mcode args...]` — launch MiniMax Code after its managed file integration is enabled. See [MiniMax clients](/guides/minimax/). |

@@ -585,8 +585,6 @@
 1794	tests/clients/mutation-plan.test.ts
 176	tests/clients/omo-client.test.ts
 872	tests/clients/omo-role-models.test.ts
-253	tests/clients/omp-path-contract.test.ts
-191	tests/clients/omp-yaml-source-inline-comments.test.ts
 4066	tests/clients/opencode-kilo-refresh.test.ts
 188	tests/clients/pi-path-contract.test.ts
 176	tests/clients/prime-client.test.ts

@@ -42,14 +42,11 @@ test("missing or unusable vision capability metadata stays permissive", () => {
   }
 });
 
-test("vision reasoning labels are localized for every supported locale and effort", () => {
-  const locales = ["en", "de", "fr", "ko", "zh", "ru", "ja"] as const;
-  for (const locale of locales) {
-    for (const level of VISION_REASONING_LEVELS) {
-      const label = visionReasoningLabel(locale, level);
-      expect(label.length).toBeGreaterThan(0);
-      expect(label).not.toBe(level);
-    }
+test("vision reasoning labels are English for every effort", () => {
+  for (const level of VISION_REASONING_LEVELS) {
+    const label = visionReasoningLabel("en", level);
+    expect(label.length).toBeGreaterThan(0);
+    expect(label).not.toBe(level);
   }
 });
 

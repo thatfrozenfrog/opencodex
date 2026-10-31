@@ -6,7 +6,6 @@ import type { TFn } from "../i18n/shared";
 import { Select } from "../ui";
 import { computeSelectMenuStyle } from "../select-position";
 import { formatNamespacedModelId } from "../provider-icons";
-import { navigateHash } from "../hash-routing";
 import {
   clampVisionReasoningToLadder,
   EFFORT_CAP_LEVELS,
@@ -155,9 +154,6 @@ export function DashboardInjectionPanel({ d }: { apiBase: string; d: Dash }) {
             align="right"
           />
         )}
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => navigateHash("#subagents")}>
-          {t("dash.injectionManage")}
-        </button>
       </div>
     </div>
   );

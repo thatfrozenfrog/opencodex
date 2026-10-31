@@ -25,10 +25,10 @@ These answer in the CLI head and never reach the proxy, so they work with nothin
 
 | Chapter | Declared capabilities |
 |---|---|
-| [lifecycle](01_surface_lifecycle.md) | 14 |
+| [lifecycle](01_surface_lifecycle.md) | 13 |
 | [providers-models](01_surface_providers-models.md) | 49 |
 | [accounts](01_surface_accounts.md) | 42 |
-| [agents-routing](01_surface_agents-routing.md) | 67 |
+| [agents-routing](01_surface_agents-routing.md) | 59 |
 | [integrations](01_surface_integrations.md) | 41 |
 | [observe-system](01_surface_observe-system.md) | 96 |
 | [access-remote](01_surface_access-remote.md) | 33 |
@@ -50,10 +50,6 @@ Original invocation order. These headings preserve links to the previous single-
 ### `ocx codex-provider`
 
 [State-changing task](01_surface_lifecycle.md#ocx-codex-provider)
-
-### `ocx chatgpt`
-
-[State-changing task](01_surface_lifecycle.md#ocx-chatgpt)
 
 ### `ocx link probe`
 
@@ -330,10 +326,6 @@ Original invocation order. These headings preserve links to the previous single-
 ### `ocx sync`
 
 [State-changing task](01_surface_lifecycle.md#ocx-sync)
-
-### `ocx agent subagents force`
-
-[State-changing task](01_surface_agents-routing.md#ocx-agent-subagents-force)
 
 ### `ocx agent request-user-input`
 
@@ -659,10 +651,6 @@ Original invocation order. These headings preserve links to the previous single-
 
 [State-changing task](01_surface_agents-routing.md#ocx-message-send)
 
-### `ocx advisor`
-
-[State-changing task](01_surface_agents-routing.md#ocx-advisor)
-
 ### `ocx message enable`
 
 [State-changing task](01_surface_agents-routing.md#ocx-message-enable)
@@ -718,30 +706,6 @@ Original invocation order. These headings preserve links to the previous single-
 ### `ocx agent effort set`
 
 [State-changing task](01_surface_agents-routing.md#ocx-agent-effort-set)
-
-### `ocx agent subagents`
-
-[Read-oriented task](01_surface_agents-routing.md#ocx-agent-subagents)
-
-### `ocx agent subagents set`
-
-[State-changing task](01_surface_agents-routing.md#ocx-agent-subagents-set)
-
-### `ocx agent subagents clear`
-
-[State-changing task](01_surface_agents-routing.md#ocx-agent-subagents-clear)
-
-### `ocx agent fallback`
-
-[Read-oriented task](01_surface_agents-routing.md#ocx-agent-fallback)
-
-### `ocx agent fallback set`
-
-[State-changing task](01_surface_agents-routing.md#ocx-agent-fallback-set)
-
-### `ocx agent fallback clear`
-
-[State-changing task](01_surface_agents-routing.md#ocx-agent-fallback-clear)
 
 ### `ocx agent sidecar`
 
@@ -1501,6 +1465,6 @@ Original invocation order. These headings preserve links to the previous single-
 
 ## Counts
 
-- declared capabilities: 363
-- of those, state-changing: 222
+- declared capabilities: 354
+- of those, state-changing: 215
 - head-resolved invocations: 2

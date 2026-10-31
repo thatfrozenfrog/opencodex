@@ -7,8 +7,6 @@ export type Page =
   | "startup"
   | "providers"
   | "models"
-  | "subagents"
-  | "advisor"
   | "logs"
   | "usage"
   | "storage"
@@ -23,8 +21,6 @@ export const VALID_PAGES = new Set<Page>([
   "startup",
   "providers",
   "models",
-  "subagents",
-  "advisor",
   "logs",
   "usage",
   "storage",
@@ -132,7 +128,6 @@ export const INTEGRATION_TAB_HASHES = [
   "integrations/opencode",
   "integrations/pi",
   "integrations/gentle-shell",
-  "integrations/omp",
   "integrations/hermes",
   "integrations/openclaw",
   "integrations/kimi",

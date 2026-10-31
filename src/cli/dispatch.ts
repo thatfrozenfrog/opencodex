@@ -896,10 +896,6 @@ const commandRunners: Record<string, CommandRunner> = {
     const { handleComboCommand } = await import("./combo");
     return await handleComboCommand(deps.args.slice(1));
   },
-  advisor: async deps => {
-    const { handleAdvisorCommand } = await import("./advisor");
-    return await handleAdvisorCommand(deps.args.slice(1));
-  },
   companion: async deps => {
     const { handleCompanionCommand } = await import("./companion");
     return await handleCompanionCommand(deps.args.slice(1), { findLiveProxy: deps.findLiveProxy });
@@ -1014,10 +1010,6 @@ const commandRunners: Record<string, CommandRunner> = {
   "codex-provider": async deps => {
     const { handleCodexProviderCommand } = await import("./codex-provider");
     return await handleCodexProviderCommand(deps.args.slice(1));
-  },
-  chatgpt: async deps => {
-    const { handleChatgptCommand } = await import("./chatgpt-command");
-    return await handleChatgptCommand(deps.args.slice(1));
   },
   claude: async deps => {
     const { cmdClaude } = await import("./claude");

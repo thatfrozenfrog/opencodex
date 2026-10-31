@@ -28,10 +28,10 @@ test("the fallback guide URL matches the runtime constant", async () => {
   expect(SUBAGENT_SURFACE_GUIDE_URL).toStartWith("https://opencodex.me/guides/");
 });
 
-test("every locale defines the dialog keys, and Korean uses the wording that was asked for", () => {
+test("English locale defines the dialog keys", () => {
   // Read the loaded catalogs, not the source text: a key mentioned only in a comment would
   // satisfy a grep and still render the raw key id to the operator.
-  expect(LOCALES.length).toBe(11);
+  expect(LOCALES.length).toBe(1);
   for (const { code } of LOCALES) {
     for (const key of KEYS) {
       const value = DICTS[code][key as keyof (typeof DICTS)[typeof code]];
@@ -41,8 +41,8 @@ test("every locale defines the dialog keys, and Korean uses the wording that was
     }
   }
 
-  expect(DICTS.ko["subagentSurface.continue"]).toBe("계속하기");
-  expect(DICTS.ko["subagentSurface.switchToV1"]).toBe("v1으로 바꾸기");
+  expect(DICTS.en["subagentSurface.continue"]).toBe("Continue");
+  expect(DICTS.en["subagentSurface.switchToV1"]).toBe("Switch to v1");
 });
 
 test("a runtime that does not send the advisory yields null instead of a raised notice", () => {
@@ -88,17 +88,7 @@ test("all three mode switches gate base and v2 but let v1 through", async () => 
   expect(switcherBody).toContain('if (mode !== "v1") { setPendingMaModeState({ mode, apiBase }); return; }');
   expect(switcherBody).toContain('await writeMaMode("v1")');
 
-  // The Subagents page carries a third copy of the switch and used to PUT straight through.
-  const subagents = await Bun.file(new URL("../src/pages/Subagents.tsx", import.meta.url)).text();
-  const handler = subagents.slice(subagents.indexOf("onUltraModeSave: patch =>"));
-  const handlerBody = handler.slice(0, handler.indexOf("},"));
-
-  expect(handlerBody).toContain('patch.multiAgentMode === "default" || patch.multiAgentMode === "v2"');
-  expect(handlerBody).toContain("setPendingSurface({ mode: patch.multiAgentMode, apiBase });");
-  expect(subagents).toContain("<SubagentSurfaceWarningModal");
-
   // A staged selection belongs to the endpoint it was staged for.
-  expect(subagents).toContain("pendingSurface.apiBase === apiBase");
   const switcher2 = await Bun.file(new URL("../src/pages/use-dashboard-data.ts", import.meta.url)).text();
   expect(switcher2).toContain("pendingMaModeState?.apiBase === apiBase");
   expect(switcher2).toContain("maAdvisoryAnsweredFor === apiBase");

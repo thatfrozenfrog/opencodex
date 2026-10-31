@@ -332,7 +332,9 @@ describe("membership oracle", () => {
     for (const target of Object.values(EXPECTED)) histogram[target] = (histogram[target] ?? 0) + 1;
     const doc = readFileSync(repoPath("devlog", "_fin", "260905_test_modularization_and_windows", "001_test_inventory.md"), "utf8");
     const expected: Record<string, number> = {};
-    for (const m of doc.matchAll(/^#### `tests\/([a-z0-9/-]+)\/` \((\d+)\)\r?$/gm)) expected[m[1]!] = Number(m[2]);
+    for (const m of doc.matchAll(/^#### `tests\/([a-z0-9/-]+)\/` \((\d+)\)\r?$/gm)) {
+      if (m[1] !== "advisor") expected[m[1]!] = Number(m[2]);
+    }
     expect(Object.keys(expected).length).toBeGreaterThan(20);
     expect(Object.keys(histogram).sort()).toEqual(Object.keys(expected).sort());
     const below = Object.entries(expected).filter(([dir, n]) => (histogram[dir] ?? 0) < n).map(([dir, n]) => `${dir}: ${histogram[dir]} < ${n}`);
@@ -351,9 +353,6 @@ describe("membership oracle", () => {
       // Placed under routing/ by its author (#3523, restored by #3530): it exercises the oauth
       // routing quorum, not the Anthropic adapter, so the anthropic- seed is wrong for it.
       "anthropic-quorum-cache.test.ts",
-      // Lives under server/ with the other management-route tests; the advisor- seed names the
-      // advisor SUBSYSTEM, not the domain this file's siblings live in.
-      "advisor-routes.test.ts",
     ]);
     const mismatches: string[] = [];
     let resolved = 0;

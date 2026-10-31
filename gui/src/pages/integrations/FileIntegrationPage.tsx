@@ -73,7 +73,6 @@ const SEMANTICS_KEY: Record<FileIntegrationClientId, TKey> = {
   opencode: "integrations.semantics.opencode",
   pi: "integrations.semantics.pi",
   "gentle-shell": "integrations.semantics.gentleShell",
-  omp: "integrations.semantics.omp",
   hermes: "integrations.semantics.hermes",
   openclaw: "integrations.semantics.openclaw",
   kimi: "integrations.semantics.kimi",
@@ -99,7 +98,6 @@ const TAB_LABEL_KEY: Record<FileIntegrationClientId, TKey> = {
   opencode: "integrations.tab.opencode",
   pi: "integrations.tab.pi",
   "gentle-shell": "integrations.tab.gentleShell",
-  omp: "integrations.tab.omp",
   hermes: "integrations.tab.hermes",
   openclaw: "integrations.tab.openclaw",
   kimi: "integrations.tab.kimi",
@@ -150,6 +148,50 @@ function FileIntegrationControls({
   const scopeKey = profileId !== undefined ? `${client}:${profileId}`
     : hermesProfile !== undefined ? `${client}/${hermesProfile}` : client;
   const [pending, setPending] = useState(false);
+  const [autoReloadEnabled, setAutoReloadEnabled] = useState(true);
+  const [autoReloadSaving, setAutoReloadSaving] = useState(false);
+  const [autoReloadLoaded, setAutoReloadLoaded] = useState(false);
+  const [autoReloadError, setAutoReloadError] = useState<string | null>(null);
+  const isReloadableClient = client === "pi";
+  const loadAutoReload = useCallback(async () => {
+    if (!isReloadableClient) return;
+    try {
+      const response = await fetch(`${apiBase}/api/settings`);
+      if (!response.ok) throw new Error("load");
+      const value = await response.json() as { clientIntegrations?: { pi?: unknown } };
+      const enabled = value.clientIntegrations?.pi !== false;
+      setAutoReloadEnabled(enabled);
+      setAutoReloadLoaded(true);
+      setAutoReloadError(null);
+    } catch {
+      setAutoReloadError(t("integrations.action.automaticReloadFailed"));
+    }
+  }, [apiBase, isReloadableClient, t]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void loadAutoReload(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadAutoReload]);
+  const toggleAutoReload = async () => {
+    setAutoReloadSaving(true);
+    setAutoReloadError(null);
+    const requested = !autoReloadEnabled;
+    try {
+      const response = await fetch(`${apiBase}/api/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientIntegrations: { [client]: requested } }),
+      });
+      const value = await response.json() as { ok?: boolean; clientIntegrations?: { pi?: boolean } };
+      if (!response.ok || value.ok !== true) throw new Error("save");
+      setAutoReloadEnabled(value.clientIntegrations?.pi !== false);
+      setAutoReloadLoaded(true);
+    } catch {
+      await loadAutoReload();
+      setAutoReloadError(t("integrations.action.automaticReloadFailed"));
+    } finally {
+      setAutoReloadSaving(false);
+    }
+  };
   const [droidReasoningDraft, setDroidReasoningDraft] = useState<{
     scopeKey: string;
     values: Record<string, string>;
@@ -419,6 +461,21 @@ function FileIntegrationControls({
         </Notice>
       )}
 
+      {isReloadableClient && (
+        <div className="card card-row">
+          <div>
+            <strong>{t("integrations.action.automaticReload")}</strong>
+            <div className="card-sub">{t("integrations.action.automaticReloadDescription")}</div>
+            {autoReloadError && <Notice tone="err">{autoReloadError}</Notice>}
+          </div>
+          <Switch
+            on={autoReloadEnabled}
+            disabled={!autoReloadLoaded || autoReloadSaving}
+            label={t("integrations.action.automaticReload")}
+            onClick={() => void toggleAutoReload()}
+          />
+        </div>
+      )}
       {status.appliedAt && (
         <p className="integration-meta">
           {t("integrations.status.appliedAt")}: {new Date(status.appliedAt).toLocaleString()}

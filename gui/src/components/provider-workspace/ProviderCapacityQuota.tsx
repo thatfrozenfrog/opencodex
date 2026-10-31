@@ -16,24 +16,8 @@ import { type QuotaWindowKey } from "../QuotaBars";
 import QuotaBars from "../QuotaBars";
 import { WorkBuddyCredits } from "./WorkBuddyCredits";
 
-function bcp47(locale: Locale): string {
-  switch (locale) {
-    case "en": return "en-GB";
-    case "de": return "de-DE";
-    case "fr": return "fr-FR";
-    case "ko": return "ko-KR";
-    case "zh": return "zh-CN";
-    case "zh-TW": return "zh-TW";
-    case "ru": return "ru-RU";
-    case "ja": return "ja-JP";
-    case "tr": return "tr-TR";
-    case "vi": return "vi-VN";
-    case "pt": return "pt-BR";
-    default: {
-      const _exhaustive: never = locale;
-      return _exhaustive;
-    }
-  }
+function bcp47(_locale: Locale): string {
+  return "en-GB";
 }
 
 // `Intl.DateTimeFormat.format()` throws a RangeError on a time value outside ±8.64e15 ms.

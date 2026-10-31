@@ -140,11 +140,12 @@ export interface OverviewSources {
   nativeSettled: boolean;
 }
 
-const FILE_LABEL_KEY: Record<FileIntegrationClientId, TKey> = {
+type OverviewFileClientId = FileIntegrationClientId;
+const OVERVIEW_FILE_CLIENTS = FILE_INTEGRATION_CLIENTS;
+const FILE_LABEL_KEY: Record<OverviewFileClientId, TKey> = {
   opencode: "integrations.tab.opencode",
   pi: "integrations.tab.pi",
   "gentle-shell": "integrations.tab.gentleShell",
-  omp: "integrations.tab.omp",
   hermes: "integrations.tab.hermes",
   openclaw: "integrations.tab.openclaw",
   kimi: "integrations.tab.kimi",
@@ -561,7 +562,7 @@ export function buildOverviewRows(sources: OverviewSources): OverviewRows {
     grokRow(sources.grok, nativeGrok, sources.nativeSettled),
     cursorRow(sources.cursor),
   ];
-  for (const clientId of FILE_INTEGRATION_CLIENTS) {
+  for (const clientId of OVERVIEW_FILE_CLIENTS) {
     const status = statusByClient.get(clientId);
     if (status) {
       rows.push(fileRow(status));

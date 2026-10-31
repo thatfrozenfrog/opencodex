@@ -312,8 +312,6 @@ Use `ocx agent` for delegation, roster, effort-cap, and fallback settings:
 ocx agent status
 ocx agent injection set --model anthropic/claude-sonnet-5 --effort xhigh
 ocx agent injection suggest "read-only searches across the repo" --apply
-ocx agent subagents set gpt-5.6-sol,anthropic/claude-sonnet-5
-ocx agent fallback set gpt-5.6-luna,xai/grok-4.5 --poll-ms 60000
 ocx effort set --subagent max
 ```
 
@@ -331,8 +329,7 @@ The management API exposes matching `GET` and `PUT` endpoints:
 | `/api/v2` | Surface mode, native feature flag, and thread settings |
 | `/api/injection-model` | Preferred model, effort, custom prompt, guidance, and native-default sync |
 | `/api/effort-caps` | Main-agent and sub-agent effort ceilings |
-| `/api/subagent-models` | Ordered roster of up to five models |
-| `/api/subagent-model-fallback` | Global fallback order and poll interval |
+| `/api/subagent-models` | Model picker ordering |
 
 For example:
 

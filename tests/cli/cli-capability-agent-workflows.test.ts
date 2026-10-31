@@ -53,22 +53,18 @@ function leaf(key: string) {
 }
 
 describe("declared agent and routing workflows", () => {
-  test("agent status declares the six actual reads and preserves its envelope", async () => {
+  test("agent status declares the four actual reads and preserves its envelope", async () => {
     const { requests, deps } = runtime(request => ({ path: request.path }));
     expect(leaf("agent status").json).toBe("envelope");
     expect(await handleAgentCommand(["status", "--json"], deps)).toBe(0);
-    const paths = ["/api/v2", "/api/injection-model", "/api/effort-caps", "/api/subagent-models", "/api/subagent-model-fallback", "/api/sidecar-settings"];
+    const paths = ["/api/v2", "/api/injection-model", "/api/effort-caps", "/api/sidecar-settings"];
     expect(requests.map(r => r.path)).toEqual(paths);
     expect(leaf("agent status").routes).toEqual(paths.map(path => ({ method: "GET", path })));
     expect(JSON.parse(String(output.mock.calls[0][0])).caps).toEqual({ path: "/api/effort-caps" });
   });
 
   test.each([
-    { key: "agent effort set", args: ["effort", "set", "--main", "high", "--subagent", "-", "--json"], path: "/api/effort-caps", body: { effortCap: "high", subagentEffortCap: null } },
-    { key: "agent subagents set", args: ["subagents", "set", "demo/a,demo/b", "--json"], path: "/api/subagent-models", body: { models: ["demo/a", "demo/b"] } },
-    { key: "agent subagents clear", args: ["subagents", "clear", "--json"], path: "/api/subagent-models", body: { models: [] } },
-    { key: "agent fallback set", args: ["fallback", "set", "demo/b", "--poll-ms", "5000", "--json"], path: "/api/subagent-model-fallback", body: { models: ["demo/b"], pollMs: 5000 } },
-    { key: "agent fallback clear", args: ["fallback", "clear", "--json"], path: "/api/subagent-model-fallback", body: { models: [] } },
+    { key: "agent effort set", args: ["effort", "set", "--main", "high", "--subagent", "-", "--json"] as string[], path: "/api/effort-caps", body: { effortCap: "high", subagentEffortCap: null } },
   ])("$key drives the declared owner with explicit clear semantics", async ({ key, args, path, body }) => {
     expect(leaf(key).routes).toEqual([{ method: "PUT", path }]);
     expect(leaf(key).mutates).toBe(true);

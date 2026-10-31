@@ -473,8 +473,8 @@ function usageModelIdentity(
   return { model: canonical };
 }
 
-function usageModelKey(providerKey: string, model: string): string {
-  return `${providerKey}\0${model}`;
+function usageModelKey(providerKey: string, model: string, unresolved = false): string {
+  return `${providerKey}\0${model}\0${unresolved ? "1" : "0"}`;
 }
 
 export function usageAttributions(entry: PersistedUsageEntry): UsageAttribution[] {
@@ -1092,7 +1092,7 @@ function overflowModelAccumulator(
   const other = blankModelAccumulator("other", "other", undefined, models[0]?.firstSeen ?? 0, mode);
   for (const model of models) mergeModelAccumulator(other, model);
   if (mode === "row-unique" && overlaps.length > 0) {
-    const overflowKeys = new Set(models.map(model => usageModelKey(model.provider, model.model)));
+    const overflowKeys = new Set(models.map(model => usageModelKey(model.provider, model.model, model.hasUnresolvedRequestedModel === true)));
     for (const overlap of overlaps) {
       const retained = overlap.models.filter(([modelKey]) => overflowKeys.has(modelKey));
       if (retained.length < 2) continue;
@@ -1429,7 +1429,7 @@ class StreamingUsageSummaryAccumulator implements UsageSummaryAccumulator {
     ordinal: number,
   ): string {
     const provider = baseProviderLabel(attribution.provider);
-    const key = usageModelKey(provider, attribution.model);
+    const key = usageModelKey(provider, attribution.model, attribution.hasUnresolvedRequestedModel === true);
     let model = partition.models.get(key);
     if (!model) {
       model = blankModelAccumulator(provider, attribution.model, attribution.resolvedModel, ordinal, this.mode);

@@ -31,6 +31,7 @@ export default function ProviderDetails({
   preset,
   usageTotals,
   modelUsage,
+  onPriceSaved,
   quotaReport,
   availableModels,
   hasLiveModels,
@@ -72,6 +73,7 @@ export default function ProviderDetails({
   preset?: CatalogPreset;
   usageTotals?: ProviderUsageTotals;
   modelUsage?: ProviderModelUsageRow[];
+  onPriceSaved?: () => void;
   quotaReport?: ProviderQuotaReportView;
   availableModels: string[];
   /** Server-reported live-catalog provenance; see filterModels(). */
@@ -343,6 +345,8 @@ export default function ProviderDetails({
         {tab === "usage" && (
           <ProviderUsage
             item={item}
+            apiBase={apiBase}
+            onPriceSaved={onPriceSaved}
             usageTotals={usageTotals}
             quotaReport={quotaReport}
             currentQuotaReading={currentQuotaReading}

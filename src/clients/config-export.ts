@@ -37,7 +37,6 @@ export type { ConfigFormat } from "../integrations/serialize";
 export type { ManagedFragment, ManagedContribution, BuildContribution, OpencodeLaunchEnv, OpencodeCatalogModel, ExportModel, ExportContext, ExportClientId, ExportClientSpec, PiModelEntry, DroidReasoningDefaults } from "./config-export/contracts";
 export { OPENCODE_PROVIDER_ID, OPENCODE_CONFIG_SCHEMA, OPENCODE_API_KEY_ENV, OPENCODE_API_KEY_ENV_REF, KILO_API_KEY_ENV, KILO_API_KEY_ENV_REF, KILO_CONFIG_SCHEMA, HERMES_API_KEY_ENV, HERMES_API_KEY_ENV_REF, OPENCLAW_API_KEY_ENV, OPENCLAW_API_KEY_ENV_REF, LOOPBACK_API_KEY_PLACEHOLDER, GAJAE_API_KEY_ENV, SCHEMA_REQUIRED_OUTPUT_BUDGET, OPENCODE_PROVIDER_BLOCK_DEFAULT_CONFIG } from "./config-export/constants";
 export { normalizeExportModels } from "./config-export/model-metadata";
-export type { OmpModelEntry, OmpProviderBlock, OmpGeneratedConfig } from "./config-export/omp";
 export type { ZcodeModelEntry, ZcodeProviderBlock, ZcodeGeneratedConfig } from "./config-export/zcode";
 export type { ZcodeStoreProviderRule, ZcodeStoreModelRule } from "./config-export/zcode-store";
 export {
@@ -63,7 +62,6 @@ import type { OpencodeLaunchEnv, OpencodeCatalogModel, ExportContext, PiModelEnt
 import { OPENCODE_API_KEY_ENV_REF, OPENCODE_PROVIDER_BLOCK_DEFAULT_CONFIG, OPENCODE_CONFIG_SCHEMA, OPENCODE_PROVIDER_ID, PI_API_DIALECT, LOOPBACK_API_KEY_PLACEHOLDER, HERMES_API_KEY_ENV_REF, OPENCLAW_API_KEY_ENV_REF, OPENCODE_API_KEY_ENV, HERMES_API_KEY_ENV, OPENCLAW_API_KEY_ENV, KILO_API_KEY_ENV } from "./config-export/constants";
 import { exportModelLabel, authoritativeContextWindow, outputBudgetFor, inputBudgetFor, normalizeExportModels, inputModalitiesForClient, opencodeModelCapabilities, proxyAdmissionHeaders, singleFragment } from "./config-export/model-metadata";
 import { exportReasoningEfforts, exportDefaultReasoningEffort, legacyReasoningMetadata, type LegacyEffortVariant } from "./config-export/reasoning-metadata";
-import { buildOmpClientConfig, summarizeOmp, buildOmpContribution } from "./config-export/omp";
 import { buildDshClientConfig, summarizeDsh, buildDshContribution, DSH_DESKTOP_PROFILE } from "./config-export/dsh";
 import { buildMcodeClientConfig, summarizeMcode, buildMcodeContribution } from "./config-export/mcode";
 import { buildZcodeClientConfig, summarizeZcode, buildZcodeContribution } from "./config-export/zcode";
@@ -196,53 +194,9 @@ export function opencodeGlobalConfigPath(
   return join(xdg, "opencode", "opencode.json");
 }
 
-const OMP_PROFILE_NAME_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
-const OMP_WINDOWS_RESERVED_PROFILE_RE = /^(?:CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\..*)?$/i;
-
-function ompProfileName(env: OpencodeLaunchEnv): string | undefined {
-  // OMP_PROFILE wins by presence, even when explicitly empty; PI_PROFILE is
-  // only the legacy fallback when the canonical variable is undefined.
-  const raw = env.OMP_PROFILE !== undefined ? env.OMP_PROFILE : env.PI_PROFILE;
-  const profile = raw?.trim();
-  if (!profile || profile === "default") return undefined;
-  if (
-    profile === "."
-    || profile === ".."
-    || profile.endsWith(".")
-    || !OMP_PROFILE_NAME_RE.test(profile)
-    || OMP_WINDOWS_RESERVED_PROFILE_RE.test(profile)
-  ) {
-    throw new ClientPathError(`Invalid OMP profile "${raw}"`);
-  }
-  return profile;
-}
-
-
 /** Pi's canonical custom-provider catalog. */
 export function piConfigPath(env: OpencodeLaunchEnv = process.env, home: string = homedir()): string {
   return join(piAgentDir(env, home), "models.json");
-}
-
-/** Resolve the global Oh My Pi agent directory using OMP's own env precedence. */
-export function ompAgentDir(env: OpencodeLaunchEnv = process.env, home: string = homedir()): string {
-  const profile = ompProfileName(env);
-  if (!profile) {
-    const override = env.PI_CODING_AGENT_DIR?.trim();
-    if (override) return absoluteClientPath(override, home, "PI_CODING_AGENT_DIR");
-  }
-  // OMP treats PI_CONFIG_DIR as a directory name relative to the user's home,
-  // even when the value starts with `/` or `~`. Mirror that path.join contract
-  // exactly instead of assigning those values different filesystem semantics.
-  const root = join(home, env.PI_CONFIG_DIR || ".omp");
-  return profile ? join(root, "profiles", profile, "agent") : join(root, "agent");
-}
-
-/** OMP's canonical custom-provider catalog. */
-export function ompModelsConfigPath(env: OpencodeLaunchEnv = process.env, home: string = homedir()): string {
-  const agentDir = ompAgentDir(env, home);
-  const yamlFallback = join(agentDir, "models.yaml");
-  const canonical = join(agentDir, "models.yml");
-  return !existsSync(canonical) && existsSync(yamlFallback) ? yamlFallback : canonical;
 }
 
 /** Compose the OpenAI-compatible proxy base URL from a live probe result. */
@@ -540,9 +494,9 @@ export function zcodeProviderStorePath(env: OpencodeLaunchEnv = process.env, hom
 
 /**
  * Prime Agent resolves its agent directory from `PRIME_AGENT_CODING_AGENT_DIR`
- * — the brand-derived spelling of the `PI_CODING_AGENT_DIR` that `ompAgentDir`
- * already honors, because the agent builds that variable name from its own
- * `piConfig.name` — and otherwise falls back to `~/.prime/agent`. Relative
+ * — the brand-derived spelling of Pi's `PI_CODING_AGENT_DIR`, because the
+ * agent builds that variable name from its own `piConfig.name` — and otherwise
+ * falls back to `~/.prime/agent`. Relative
  * overrides are refused for the same reason as MCode's and ZCode's: a
  * background proxy and a foreground client can have different working
  * directories.
@@ -1440,20 +1394,6 @@ export const EXPORT_CLIENTS: Record<ExportClientId, ExportClientSpec> = {
     // dedicated admission header a remote bind requires.
     loopbackOnly: true,
   },
-  omp: {
-    id: "omp",
-    filename: "omp-models.yaml",
-    destination: env => ompModelsConfigPath(env),
-    apiKeyEnv: "",
-    exportHint: "OMP reads a non-secret placeholder from models.yml; loopback needs no key.",
-    build: buildOmpClientConfig,
-    format: "yaml",
-    summarize: summarizeOmp,
-    buildContribution: buildOmpContribution,
-    // OMP supports provider-level headers, but remote credential wiring is
-    // intentionally deferred from this initial loopback-only integration.
-    loopbackOnly: true,
-  },
   hermes: {
     id: "hermes",
     filename: "hermes-config.yaml",
@@ -1576,7 +1516,7 @@ export const EXPORT_CLIENTS: Record<ExportClientId, ExportClientSpec> = {
     buildContribution: buildPrimeContribution,
     // Prime's provider block does accept `headers`, so a dedicated admission
     // header has somewhere to live, but remote credential wiring is deferred
-    // from this initial loopback-only integration — same stance as OMP's.
+    // from this initial loopback-only integration.
     loopbackOnly: true,
   },
   aside: {
@@ -1634,7 +1574,7 @@ export const EXPORT_CLIENTS: Record<ExportClientId, ExportClientSpec> = {
     summarize: summarizePi,
     buildContribution: buildOmoContribution,
     /*
-     * Loopback-only for OMP's and Prime's reason, NOT Pi's and Aside's. senpi's
+     * Loopback-only for Prime's reason, NOT Pi's and Aside's. senpi's
      * provider block does accept a `headers` map and does interpolate `$ENV` in
      * its values, so unlike Aside there is somewhere the dedicated admission
      * header could live. What does not exist is a builder that emits one:
@@ -1706,7 +1646,7 @@ export function isExportClientId(value: string): value is ExportClientId {
 }
 
 /** Single entry point every export surface calls. */
-export function buildClientConfig(client: ExportClientId, ctx: ExportContext): unknown {
+export function buildClientConfig(client: ExportClientId, ctx: ExportContext): object {
   return EXPORT_CLIENTS[client].build(ctx);
 }
 

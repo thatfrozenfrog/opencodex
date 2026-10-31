@@ -36,9 +36,8 @@ export function absoluteClientPath(raw: string, home: string, variable: string):
 
 /**
  * Pi resolves its agent directory from `PI_CODING_AGENT_DIR`, falling back to
- * `~/.pi/agent`. `ompAgentDir` below already reads that variable — OMP is a Pi
- * derivative — so Pi's own resolver honoring it is what makes the two agree
- * rather than a new claim about Pi's contract.
+ * `~/.pi/agent`. Relative overrides are refused because a background proxy and
+ * a foreground client can have different working directories.
  *
  * A relative override is refused for the same reason MCode's and ZCode's are: a
  * background proxy and a foreground client can have different working

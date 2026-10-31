@@ -46,6 +46,7 @@ export type AddProviderIntent = { tier?: "accounts" | "free" | "paid"; custom?: 
 export interface DetailSlotData {
   usageTotals?: import("./types").ProviderUsageTotals;
   modelUsage?: ProviderModelUsageRow[];
+  onPriceSaved: () => void;
   quotaReport?: ProviderQuotaReportView;
   availableModels: string[];
   /** Did the last successful discovery return rows? Server-reported, never inferred. */
@@ -586,6 +587,7 @@ export default function ProviderWorkspaceShell({
           detail?.(selectedItem, {
             usageTotals: usageTotals[selectedItem.name],
             modelUsage: usageModels[selectedItem.name],
+            onPriceSaved: () => { usageResource.refresh(); },
             quotaReport: quotaReports[selectedItem.name],
             availableModels: modelSnapshot?.selection.available[selectedItem.name] ?? [],
             hasLiveModels: (modelSnapshot?.selection.liveModelCounts[selectedItem.name] ?? 0) > 0,

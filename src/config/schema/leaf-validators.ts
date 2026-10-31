@@ -48,10 +48,6 @@ import {
 import { getConfigDir } from "../paths";
 import { COMPACTION_TRIGGERS, validCompactionSourceModels } from "./compaction-triggers";
 
-// The chatgptDesktop leaf lives in its own zod-only module so the `ocx chatgpt` command can explain
-// a dropped block without loading this file's provider and account validators.
-export { chatgptDesktopConfigIssue, chatgptDesktopSchema } from "./chatgpt-desktop";
-
 /** One definition of "usable secret", shared by the schema and the warnings. */
 export function isUsableApiKeySecret(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && value === value.trim();
@@ -846,6 +842,7 @@ export const apiKeyEntrySchema = z.object({
 export const clientIntegrationsSchema = z.object({
   codex: z.boolean().optional().catch(undefined),
   grok: z.boolean().optional().catch(undefined),
+  pi: z.boolean().optional().catch(undefined),
   "claude-desktop": z.boolean().optional().catch(undefined),
 }).passthrough();
 

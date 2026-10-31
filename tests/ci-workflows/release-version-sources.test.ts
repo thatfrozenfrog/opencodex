@@ -167,7 +167,7 @@ describe("every version move covers all four sources", () => {
     expect(gate.env).toEqual({ RELEASE_VERSION: "$" + "{{ inputs.version }}" });
     expect(gate.run?.trim()).toBe('bun scripts/release-version-sources.ts check "$RELEASE_VERSION"');
     const gateAt = stepIndex(desktop, "Verify every version source matches the release");
-    for (const later of ["Install project dependencies", "Build WidgetKit extension", "Build desktop bundles", "Upload desktop release"]) {
+    for (const later of ["Install project dependencies", "Build desktop bundles", "Upload desktop release"]) {
       expect(gateAt, later).toBeLessThan(stepIndex(desktop, later));
     }
 

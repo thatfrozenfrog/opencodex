@@ -188,7 +188,7 @@ describe("native Anthropic image input reaches client documents", () => {
       expect(fastRows).toEqual(expectedFastInputs);
     };
 
-    for (const client of ["aside", "pi", "gajae", "prime", "omo", "omp"] as const) {
+    for (const client of ["aside", "pi", "gajae", "prime", "omo"] as const) {
       const document = buildClientConfig(client, context) as PiGeneratedConfig;
       const rows = document.providers[OPENCODE_PROVIDER_ID]!.models;
       expectImageInputs(rows.map(({ id, input }) => ({ id, input })));
@@ -391,28 +391,6 @@ describe("GET /api/client-config", () => {
     expect(provider.apiKey).toBe(LOOPBACK_API_KEY_PLACEHOLDER);
     expect(provider.baseUrl).toBe("http://127.0.0.1:10100/v1");
     expect(provider.models.map(model => model.id)).toContain("a/m1");
-  }, 15_000);
-
-  test("OMP returns the full routed catalog as models.yml YAML", async () => {
-    const response = await clientConfigApi(baseConfig(), "?client=omp");
-    expect(response.status).toBe(200);
-    const body = await response.json() as ClientConfigEnvelope;
-
-    expect(body.client).toBe("omp");
-    expect(body.filename).toBe("omp-models.yaml");
-    expect(body.format).toBe("yaml");
-    expect(body.text).toContain("providers:");
-    expect(body.text).toContain("a/m1");
-    const provider = (body.config as PiGeneratedConfig).providers[OPENCODE_PROVIDER_ID];
-    const routedIds = provider.models
-      .map(model => model.id)
-      .filter(id => id.startsWith("a/") || id.startsWith("b/"));
-    expect(routedIds).toEqual(["a/m1", "a/m2", "b/no-context"]);
-    expect(provider.models.find(model => model.id === "a/m1")?.contextWindow).toBe(128_000);
-    expect(provider.models.find(model => model.id === "b/no-context")?.contextWindow).toBeUndefined();
-    expect(provider.apiKey).toBe(LOOPBACK_API_KEY_PLACEHOLDER);
-    expect(body.text).not.toContain(REAL_LOOKING_KEY);
-    expect(JSON.stringify(body.config)).not.toContain(REAL_LOOKING_KEY);
   }, 15_000);
 
   test("DSH response keeps management reasoning metadata in the rc.6 model map", async () => {

@@ -48,17 +48,7 @@ export const GENERATED_PATHS = [
  * source of truth; nothing generates these.
  */
 export const I18N_CATALOG_PATHS = [
-  "gui/src/i18n/de.ts",
   "gui/src/i18n/en.ts",
-  "gui/src/i18n/fr.ts",
-  "gui/src/i18n/ja.ts",
-  "gui/src/i18n/ko.ts",
-  "gui/src/i18n/pt.ts",
-  "gui/src/i18n/ru.ts",
-  "gui/src/i18n/tr.ts",
-  "gui/src/i18n/vi.ts",
-  "gui/src/i18n/zh.ts",
-  "gui/src/i18n/zh-TW.ts",
 ] as const;
 
 /**

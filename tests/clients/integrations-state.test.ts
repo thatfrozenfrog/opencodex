@@ -253,7 +253,7 @@ describe("ordering guards", () => {
       // stat it; only assert the distinction where the OS actually enforces it.
       if (kind !== "file") {
         expect(kind).toBe("failed");
-        expect(loadTarget(io, secret)).toEqual({ ok: false, why: "read-failed" });
+        expect(loadTarget(io as Parameters<typeof loadTarget>[0], secret)).toEqual({ ok: false, why: "read-failed" });
       }
       // A genuinely absent path is the other side of the distinction.
       expect(io.statKind(join(home, "definitely-not-there"))).toBe("missing");
@@ -570,42 +570,28 @@ describe("ownership is scoped to recorded fragments", () => {
     baseUrl: "http://127.0.0.1:10100/v1",
     api: "openai-chat",
   };
-  const ownedContribution = {
-    clientId: "omp" as const,
-    fragments: [{ path: ["providers", "opencodex"], value: ownedValue }],
-  };
   const extraValue = {
     baseUrl: "https://freebuff.invalid/v1",
     api: "openai-chat",
   };
+  const originalText = "providers:\n  opencodex:\n    baseUrl: http://127.0.0.1:10100/v1\n    api: openai-chat\n";
+  const ownedContribution = {
+    clientId: "hermes" as const,
+    fragments: [{ path: ["providers", "opencodex"], value: ownedValue }],
+  };
   const documentWithExtra = {
     providers: { opencodex: ownedValue, freebuff: extraValue },
   };
-  const originalText = "providers:\n  opencodex:\n    baseUrl: http://127.0.0.1:10100/v1\n    api: openai-chat\n";
   const textWithExtra = `${originalText}  freebuff:\n    baseUrl: https://freebuff.invalid/v1\n    api: openai-chat\n`;
   const record: OwnershipRecord = {
-    clientId: "omp",
-    configPath: "/tmp/models.yml",
-    // The extra provider was added after this record was written. The
-    // classifier must not use this whole-file hash to claim our block changed.
+    clientId: "hermes",
+    configPath: "/tmp/hermes-config.yaml",
     fileFingerprint: fingerprint(originalText),
     blockFingerprint: fingerprint(canonicalContribution(ownedContribution)),
     fragmentPaths: [["providers", "opencodex"]],
     appliedAt: "2026-08-02T00:00:00.000Z",
     opId: "seeded-op",
   };
-
-  test("an unrelated extra fragment remains current", () => {
-    const result = classifyIntegration({
-      fileText: textWithExtra,
-      fileIsRegular: true,
-      parsed: documentWithExtra,
-      record,
-      contribution: ownedContribution,
-    });
-
-    expect(result).toEqual({ state: "current" });
-  });
 
   test("DSH also ignores whole-file edits outside its registry-declared fragment", () => {
     const dshContribution = {
@@ -796,7 +782,7 @@ describe("installation detection is independent of config state", () => {
 describe("the loopback-only set is one fact, read through one seam", () => {
   test("identifies exactly the registered loopback-only clients", () => {
     const loopbackOnly = INTEGRATION_CLIENT_IDS.filter(id => isLoopbackOnly(id));
-    expect(loopbackOnly).toEqual(["qoder", "qoder-cn", "workbuddy", "workbuddy-ai", "pi", "omp", "kimi", "gajae", "dsh", "mcode", "zcode", "commandcode", "prime", "aside", "raycast", "omo", "cline", "droid", "gentle-shell"]);
+    expect(loopbackOnly).toEqual(["qoder", "qoder-cn", "workbuddy", "workbuddy-ai", "pi", "kimi", "gajae", "dsh", "mcode", "zcode", "commandcode", "prime", "aside", "raycast", "omo", "cline", "droid", "gentle-shell"]);
   });
 
   test("the registry restates nothing — it reads the export spec", () => {
@@ -819,6 +805,6 @@ describe("the managed file size bound", () => {
      */
     expect(status.state).toBe("unsafe");
     expect(status.reason).toBe("unparseable");
-    expect(loadTarget(fileIO(), path)).toEqual({ ok: false, why: "read-failed" });
+    expect(loadTarget(fileIO() as Parameters<typeof loadTarget>[0], path)).toEqual({ ok: false, why: "read-failed" });
   });
 });

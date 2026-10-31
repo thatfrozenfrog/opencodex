@@ -1,6 +1,6 @@
 ---
 title: Integrations
-description: Connect opencodex to OpenCode, Pi, Gentle Shell, OMP, Hermes, OpenClaw, Kimi Code, gjc, DeepSeek Harness, MiniMax Code, ZCode, Prime Agent, Aside, Raycast, omo, Cline CLI, Kilo, Command Code and Factory Droid from the dashboard — one switch per client, with a backup taken before every write.
+description: Connect opencodex to OpenCode, Pi, Gentle Shell, Hermes, OpenClaw, Kimi Code, gjc, DeepSeek Harness, MiniMax Code, ZCode, Prime Agent, Aside, Raycast, omo, Cline CLI, Kilo, Command Code and Factory Droid from the dashboard — one switch per client, with a backup taken before every write.
 ---
 
 The **Connect** page writes opencodex's provider block into a client's own config
@@ -11,7 +11,6 @@ file, and removes it again. Each client below has its own switch:
 | OpenCode | `~/.config/opencode/opencode.json` | JSON | next direct launch | `OPENCODEX_OPENCODE_API_KEY` |
 | Pi | `~/.pi/agent/models.json` | JSON | new sessions | loopback placeholder |
 | Gentle Shell | `~/.gentle-shell/agent/models.json` (persistent selected home) | JSON | after restarting Gentle Shell | loopback placeholder |
-| OMP | `~/.omp/agent/models.yml` | YAML | after restarting OMP | `opencodex-loopback` placeholder |
 | Hermes | `~/.hermes/config.yaml` | YAML | new sessions | `OPENCODEX_HERMES_API_KEY` |
 | OpenClaw | `~/.openclaw/openclaw.json` | JSON5 | immediately, on a running gateway | `OPENCODEX_OPENCLAW_API_KEY` |
 | Kimi Code | `~/.kimi-code/config.toml` | TOML | on restart, or `/reload` | loopback placeholder |
@@ -265,17 +264,9 @@ it detects which build is installed, shows the Base URL and API Key to paste int
 reports the last request Cursor made to the proxy. See
 [Cursor Private Inference](/guides/cursor-private-inference/).
 
-Paths honor each client's own environment override where it has one. For OMP,
-`OMP_PROFILE` wins over `PI_PROFILE` by presence, even when explicitly empty. A named profile
-uses `PI_CONFIG_DIR` as a directory name relative to the user's home and ignores `PI_CODING_AGENT_DIR`; without a named profile,
-`PI_CODING_AGENT_DIR` wins. OMP supports provider-level headers, but this initial integration
-is deliberately loopback-only; remote `x-opencodex-api-key` wiring is deferred. Relocated
+Paths honor each client's own environment override where it has one. Relocated
 `HERMES_HOME`, `KIMI_CODE_HOME`, and `XDG_CONFIG_HOME` paths are likewise followed rather than
 guessed at. The table lists each client's default.
-
-For native OpenAI models, the generated OMP block selects its model-level Responses API, preserving
-image input and reasoning-effort controls. Routed models retain the provider's Chat Completions
-dialect so their existing adapters remain compatible.
 
 OpenClaw has several, and they do different jobs. `OPENCLAW_CONFIG_PATH` selects the
 file; `OPENCLAW_STATE_DIR`, `OPENCLAW_PROFILE` and `OPENCLAW_HOME` select the state
@@ -324,7 +315,7 @@ normalized. The exception is something JSON cannot rewrite exactly — a non-fin
 number like `1e999`, a number a rewrite would round (a very large integer, or one
 so small it collapses to zero), `-0`, the same key written twice in one object, or nesting deeper
 than 1000 levels — which locks the switch instead, so nothing is silently changed or dropped.
-**OMP, DSH and Hermes** are unaffected by sibling edits too, for a different reason: their writers
+**DSH and Hermes** are unaffected by sibling edits too, for a different reason: their writers
 patch only their own managed provider ranges byte-wise, so the rest of the
 file is never rewritten. For the remaining formats that can carry comments
 (OpenClaw, Kimi Code, gjc, MiniMax Code, Raycast — JSON5 and TOML
@@ -424,7 +415,7 @@ configuration must stay larger, manage it manually instead of using the Connect 
 
 **Formatting is generally not preserved.** Applying parses a config and writes it back
 out, so JSON, JSON5 and TOML may be reformatted and comments in JSON5 or TOML are lost.
-OMP, DSH and Hermes are the exceptions: OMP and Hermes patch only `providers.opencodex`.
+DSH and Hermes are the exceptions: Hermes patches only `providers.opencodex`.
 DSH patches only `[id=llm-pi-ai].config.providers.opencodex` in the Desktop profile patch,
 or `llm-pi-ai.providers.opencodex` in `settings.yaml` when there is no Desktop profile.
 Their YAML writers preserve unrelated provider comments and formatting byte-for-byte. If that exact
@@ -450,11 +441,6 @@ requires. DSH has a generic headers map, but rc.6 does not document that dedicat
 header as a supported integration contract, so the managed writer fails closed instead of
 guessing. Prime Agent's provider block does accept headers, but remote credential wiring is
 deferred from its initial integration. Give them loopback access through an SSH tunnel or a local forwarder that adds the header.
-
-**The generated OMP integration is also deliberately loopback-only.** OMP does support
-provider-level headers, but this initial integration does not emit remote
-`x-opencodex-api-key` credential wiring. Manual remote OMP configuration is outside the
-managed integration for now.
 
 **Kimi Code cannot hold an environment reference,** so its config carries an
 `opencodex-loopback` placeholder rather than a key. No real credential is ever written

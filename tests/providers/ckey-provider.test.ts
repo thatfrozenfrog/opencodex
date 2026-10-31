@@ -7,6 +7,8 @@ import { PROVIDER_REGISTRY } from "../../src/providers/registry";
 import { formatCostDual, formatCostUsd } from "../../gui/src/provider-workspace/usage";
 import type { OcxConfig } from "../../src/types";
 import { removeTreeWithRetry } from "../helpers/remove-tree";
+import { ensureCkeyPricing } from "../../src/usage/ckey-pricing";
+import { estimateRequestCost } from "../../src/usage/cost";
 
 const originalFetch = globalThis.fetch;
 const previousOpencodexHome = process.env.OPENCODEX_HOME;
@@ -14,6 +16,7 @@ let opencodexHome: string;
 
 function ckeyConfig(baseUrl = "https://api.xah.io/v1", apiKey = "ck-prod-test-key-123"): OcxConfig {
   return {
+    port: 0,
     defaultProvider: "ckey",
     providers: {
       ckey: {
@@ -126,6 +129,23 @@ describe("Ckey.vn provider", () => {
     const result = await fetchProviderQuotaReports(ckeyConfig(), true);
     // TERMINAL_QUOTA_FAILURE suppresses report publication on bad key
     expect(result.reports).toHaveLength(0);
+  });
+
+  test("estimates token, request and minimum charges from the authenticated Ckey catalog", async () => {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(String(input));
+      expect(url.origin + url.pathname).toBe("https://ckey.vn/api/llm/models");
+      expect(url.searchParams.get("key")).toBe("ck-prod-test-key-123");
+      expect(init?.redirect).toBe("error");
+      return Response.json({ success: true, data: { models: [{ public_name: "seller/GPT-Demo", input_price_per_million_vnd: 5000, output_price_per_million_vnd: 15000, price_per_request_vnd: 2, min_charge_per_request_vnd: 10, cache_enabled: false, cache_read_price_per_million_vnd: 0, cache_write_price_per_million_vnd: 0 }] } });
+    }) as typeof fetch;
+    await ensureCkeyPricing(ckeyConfig());
+    const estimate = estimateRequestCost({ provider: "ckey", model: "seller/GPT-Demo", usage: { inputTokens: 1000, outputTokens: 1000 }, usageStatus: "reported" });
+    expect(estimate?.price?.source).toBe("ckey");
+    expect(estimate?.cost.total).toBeCloseTo(22 / 25000);
+    const minimum = estimateRequestCost({ provider: "ckey", model: "seller-GPT-Demo", usage: { inputTokens: 1, outputTokens: 1 }, usageStatus: "reported" });
+    expect(minimum?.cost.total).toBeCloseTo(10 / 25000);
+    expect(estimateRequestCost({ provider: "ckey", model: "unknown", usage: { inputTokens: 1, outputTokens: 1 }, usageStatus: "reported" })).toBeNull();
   });
 
   test("formatCostDual formats cost in both USD and VND", () => {

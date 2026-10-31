@@ -34,8 +34,8 @@ accumulator excludes them before available-model discovery, series allocation an
 Its additive `appliedFilters` response echoes the validated model ids as requested and records
 deduplicated, sorted `hiddenProviders`; it introduces no credential or account-identity field.
 
-Query builders in `gui/src/pages/usage-companion-utils.ts`,
-`desktop/src-tauri/src/companion_query.rs` and `app/Sources/MenuBarCore/ProxyClient.swift`
+Query builders in `gui/src/pages/usage-companion-utils.ts` and
+`desktop/src-tauri/src/companion_query.rs`
 encode nested model ids and repeated exclusions. Their projections compare filter sets
 semantically, independently of ordering and duplicate entries:
 
@@ -51,8 +51,8 @@ with old snapshots and timeline responses.
 
 ## Totals, quotas and title
 
-`desktop/src-tauri/src/companion_usage.rs`, `gui/src/pages/tray-data.ts` and
-`app/Sources/MenuBarCore/CompanionUsage.swift` preserve measured zero separately from missing
+`desktop/src-tauri/src/companion_usage.rs` and `gui/src/pages/tray-data.ts`
+preserve measured zero separately from missing
 measurements. Active filters need attributable model rows: a missing/malformed row collection or
 an `other/other` aggregate cannot be redistributed and remains unavailable. An intentional empty
 selection is distinct from a read failure. With no filters, the original summary is preserved.
@@ -92,26 +92,8 @@ to clear the title. The update dot is independent of companion usage and title f
 
 The native window/transport boundary remains in [Desktop shell](desktop-shell.md).
 
-## Widget refresh
-
-The Tauri app writes the widget snapshot from Rust (`desktop/src-tauri/src/widget.rs`) into the
-extension's container. Writing and reloading are separate. The file is written whenever anything
-other than `generatedAt` changed, so its `lastUpdated` is always the latest poll, and an unchanged
-file is rewritten after a 15-minute heartbeat measured from its own `generatedAt`, so a restarted
-app decides the same way. A reload is requested through the NativeTray export
-`ocx_widget_reload_timelines` (`app/Sources/NativeTray/WidgetReload.swift`, WidgetKit on the main
-queue) only when what the widget displays changed, ignoring both timestamps, and at most once
-every 20 minutes; timestamp-only writes and heartbeats never reload. Apple does not define whether
-a menu bar accessory app counts as foreground for the reload budget, so dashboard visibility does
-not lift the limit. The widget's own 30-minute fallback timeline rereads a change that landed
-inside the reload window, renders the "Updated" age as a self-updating relative date, and
-schedules a stale entry at `WidgetSnapshot.staleDate` (two heartbeats after the write, owned by
-`app/Sources/MenuBarCore/WidgetSnapshot.swift`). Coverage: `widget::macos` Rust tests and
-`WidgetSnapshotSuite`.
-
 Behavior coverage lives in `tests/usage/usage-timeline.test.ts`,
-`tests/server/companion-settings.test.ts`, the GUI companion utility/data tests, Rust inline tests,
-and `app/Sources/MenuBarCoreTests/TransportSuite.swift` and `WidgetSnapshotSuite.swift`.
+`tests/server/companion-settings.test.ts`, the GUI companion utility/data tests, and Rust inline tests.
 
 Malformed optional timeline filter receipts use the older-server fallback without discarding valid series. Active filters omit untrusted folded totals and mark the projection incomplete.
 

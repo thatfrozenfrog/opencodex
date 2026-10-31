@@ -25,25 +25,11 @@ const KEY_PRESETS = PROVIDER_REGISTRY.filter(entry => entry.authKind === "key").
 /** Guides state the total and the key-based split on one line. */
 const GUIDES = [
   { locale: "en", path: "docs-site/src/content/docs/guides/providers.md", anchor: "opencodex ships" },
-  { locale: "ja", path: "docs-site/src/content/docs/ja/guides/providers.md", anchor: "組み込みプリセットが" },
-  { locale: "ko", path: "docs-site/src/content/docs/ko/guides/providers.md", anchor: "빌트인 프리셋이" },
-  { locale: "fr", path: "docs-site/src/content/docs/fr/guides/providers.md", anchor: "préréglages intégrés" },
-  { locale: "ru", path: "docs-site/src/content/docs/ru/guides/providers.md", anchor: "встроенными пресетами" },
-  { locale: "tr", path: "docs-site/src/content/docs/tr/guides/providers.md", anchor: "yerleşik önayar ile" },
-  { locale: "zh-cn", path: "docs-site/src/content/docs/zh-cn/guides/providers.md", anchor: "个密钥预设" },
-  { locale: "zh-tw", path: "docs-site/src/content/docs/zh-tw/guides/providers.md", anchor: "個 key-based" },
 ] as const;
 
 /** Quickstarts state the total only. */
 const QUICKSTARTS = [
   { locale: "en", path: "docs-site/src/content/docs/getting-started/quickstart.md", anchor: "built-in registry presets" },
-  { locale: "ja", path: "docs-site/src/content/docs/ja/getting-started/quickstart.md", anchor: "組み込みレジストリプリセット" },
-  { locale: "ko", path: "docs-site/src/content/docs/ko/getting-started/quickstart.md", anchor: "내장 레지스트리 프리셋" },
-  { locale: "fr", path: "docs-site/src/content/docs/fr/getting-started/quickstart.md", anchor: "préréglages intégrés au registre" },
-  { locale: "ru", path: "docs-site/src/content/docs/ru/getting-started/quickstart.md", anchor: "встроенных пресетов реестра" },
-  { locale: "tr", path: "docs-site/src/content/docs/tr/getting-started/quickstart.md", anchor: "önayardan birini" },
-  { locale: "zh-cn", path: "docs-site/src/content/docs/zh-cn/getting-started/quickstart.md", anchor: "个预设中选择一个" },
-  { locale: "zh-tw", path: "docs-site/src/content/docs/zh-tw/getting-started/quickstart.md", anchor: "個預設中選擇一個" },
 ] as const;
 
 const STRUCTURE = {

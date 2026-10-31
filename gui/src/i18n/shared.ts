@@ -1,62 +1,17 @@
 import { createContext, useContext } from "react";
-import { DICTS, localeDisplayName, type Locale, type TKey } from "./catalogs";
+import type { Locale, TKey } from "./catalogs";
 
-export { DICTS, localeDisplayName, type Locale, type TKey };
+export { DICTS, LOCALES, localeDisplayName, type Locale, type TKey } from "./catalogs";
 
-export const LOCALES: { code: Locale; htmlLang: string }[] = [
-  { code: "en", htmlLang: "en" },
-  { code: "de", htmlLang: "de" },
-  { code: "fr", htmlLang: "fr" },
-  { code: "ko", htmlLang: "ko" },
-  { code: "zh", htmlLang: "zh-CN" },
-  { code: "zh-TW", htmlLang: "zh-TW" },
-  { code: "ru", htmlLang: "ru" },
-  { code: "ja", htmlLang: "ja" },
-  { code: "tr", htmlLang: "tr" },
-  { code: "vi", htmlLang: "vi" },
-  { code: "pt", htmlLang: "pt-BR" },
-];
+let activeLocale: Locale = "en";
 
-const LANG_KEY = "ocx-lang";
-
-let activeLocale: Locale | null = null;
-
-export function detectInitial(): Locale {
-  try {
-    const stored = localStorage.getItem(LANG_KEY);
-    if (stored === "en" || stored === "de" || stored === "fr" || stored === "ko" || stored === "zh" || stored === "zh-TW" || stored === "ru" || stored === "ja" || stored === "tr" || stored === "vi" || stored === "pt") return stored;
-  } catch { /* ignore */ }
-  const nav = typeof navigator !== "undefined" && navigator?.language ? navigator.language.toLowerCase() : "en";
-  if (nav.startsWith("de")) return "de";
-  if (nav.startsWith("fr")) return "fr";
-  if (nav.startsWith("ko")) return "ko";
-  if (nav.startsWith("zh")) {
-    // zh-TW / zh-HK / zh-MO / zh-Hant → Traditional; everything else → Simplified.
-    if (
-      nav.includes("tw") ||
-      nav.includes("hk") ||
-      nav.includes("mo") ||
-      nav.includes("hant")
-    ) {
-      return "zh-TW";
-    }
-    return "zh";
-  }
-  if (nav.startsWith("ru")) return "ru";
-  if (nav.startsWith("ja")) return "ja";
-  if (nav.startsWith("tr")) return "tr";
-  if (nav.startsWith("vi")) return "vi";
-  if (nav.startsWith("pt")) return "pt";
-  return "en";
-}
-
-/** Current LanguageProvider locale for non-React UI such as the auth fetch dialog. */
+/** Dashboard copy is English-only; navigator and stored language preferences are ignored. */
 export function getActiveLocale(): Locale {
-  return activeLocale ?? detectInitial();
+  return activeLocale;
 }
 
-export function setActiveLocale(locale: Locale): void {
-  activeLocale = locale;
+export function setActiveLocale(_locale: Locale): void {
+  activeLocale = "en";
 }
 
 export type Vars = Record<string, string | number>;

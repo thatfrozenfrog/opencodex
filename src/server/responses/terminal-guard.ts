@@ -156,7 +156,7 @@ export function isTerminalGuardPassthroughOnly(event: AdapterEvent): boolean {
   return event.type === "heartbeat" || event.type === "tool_call_delta";
 }
 
-/** Merge two reported usages (canonical Responses convention). Shared with the advisor guard. */
+/** Merge two reported usages (canonical Responses convention). */
 export function mergeUsage(first: OcxUsage | undefined, second: OcxUsage | undefined): OcxUsage | undefined {
   if (!first) return second;
   if (!second) return first;

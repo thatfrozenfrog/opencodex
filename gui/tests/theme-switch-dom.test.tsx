@@ -4,7 +4,6 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { ThemeSwitch, type ThemeMode } from "../src/components/theme-switch";
 import { en } from "../src/i18n/en";
-import { ko } from "../src/i18n/ko";
 import { LanguageProvider } from "../src/i18n/provider";
 import { getActiveLocale, setActiveLocale, type Locale } from "../src/i18n/shared";
 
@@ -14,7 +13,7 @@ let previous: Record<(typeof globals)[number], unknown>;
 let previousLocale: Locale;
 let root: Root | null = null;
 
-function mount(theme: ThemeMode, onChange: (mode: ThemeMode) => void, locale: "en" | "ko" = "en") {
+function mount(theme: ThemeMode, onChange: (mode: ThemeMode) => void, locale: "en" = "en") {
   previousLocale = getActiveLocale();
   const win = new Window({ url: "http://127.0.0.1:10100/" });
   previous = Object.fromEntries(globals.map(k => [k, Reflect.get(globalThis, k)])) as typeof previous;
@@ -44,7 +43,7 @@ afterEach(() => {
   setActiveLocale(previousLocale);
 });
 
-for (const [locale, dict] of [["en", en], ["ko", ko]] as const) {
+for (const [locale, dict] of [["en", en]] as const) {
   test(`theme choices have ordered ${locale} accessible names and decorative icons`, () => {
     const { host } = mount("system", () => {}, locale);
     const group = host.querySelector('[role="group"]');

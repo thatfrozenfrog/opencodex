@@ -20,7 +20,7 @@ describe("Codex Bulk Import Parser", () => {
       accessToken: "ey-access-token-123",
       refreshToken: "rt-refresh-token-456",
       idToken: "id-token-789",
-      email: "user@9router.com",
+      email: "user@example.com",
       chatgptAccountId: "acc-9router-1",
       chatgptPlanType: "pro",
       expiresAt: "2026-12-31T23:59:59.000Z",
@@ -30,7 +30,7 @@ describe("Codex Bulk Import Parser", () => {
     expect(normalized).not.toBeNull();
     expect(normalized?.accessToken).toBe("ey-access-token-123");
     expect(normalized?.refreshToken).toBe("rt-refresh-token-456");
-    expect(normalized?.email).toBe("user@9router.com");
+    expect(normalized?.email).toBe("user@example.com");
     expect(normalized?.chatgptAccountId).toBe("acc-9router-1");
     expect(normalized?.plan).toBe("pro");
     expect(normalized?.expiresAt).toBe(Date.parse("2026-12-31T23:59:59.000Z"));
@@ -39,7 +39,7 @@ describe("Codex Bulk Import Parser", () => {
   test("parses Cockpit CodexAccount export format", () => {
     const cockpitAccount = {
       id: "cockpit-user-1",
-      email: "pilot@cockpit.dev",
+      email: "pilot@example.com",
       tokens: {
         access_token: "ey-cockpit-access",
         refresh_token: "rt-cockpit-refresh",
@@ -52,7 +52,7 @@ describe("Codex Bulk Import Parser", () => {
     const normalized = normalizeSingleCodexAccountCandidate(cockpitAccount);
     expect(normalized).not.toBeNull();
     expect(normalized?.id).toBe("cockpit-user-1");
-    expect(normalized?.email).toBe("pilot@cockpit.dev");
+    expect(normalized?.email).toBe("pilot@example.com");
     expect(normalized?.accessToken).toBe("ey-cockpit-access");
     expect(normalized?.refreshToken).toBe("rt-cockpit-refresh");
     expect(normalized?.plan).toBe("team");
@@ -84,7 +84,7 @@ describe("Codex Bulk Import Parser", () => {
         {
           platform: "openai",
           type: "oauth",
-          email: "sub2@openai.com",
+          email: "sub2@example.com",
           credentials: {
             access_token: "ey-sub2-access",
             refresh_token: "rt-sub2-refresh",
@@ -102,7 +102,7 @@ describe("Codex Bulk Import Parser", () => {
 
     const extracted = extractCodexAccountsFromRaw(sub2api);
     expect(extracted.length).toBe(1);
-    expect(extracted[0]?.email).toBe("sub2@openai.com");
+    expect(extracted[0]?.email).toBe("sub2@example.com");
     expect(extracted[0]?.accessToken).toBe("ey-sub2-access");
     expect(extracted[0]?.refreshToken).toBe("rt-sub2-refresh");
     expect(extracted[0]?.plan).toBe("plus");

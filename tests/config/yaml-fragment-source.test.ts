@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { patchYamlFragmentSource, yamlFragmentUnsupportedStyle } from "../../src/integrations/omp-yaml-source";
+import { patchYamlFragmentSource, yamlFragmentUnsupportedStyle } from "../../src/integrations/yaml-fragment-source";
 
 const DSH_PATH = ["llm-pi-ai", "providers", "opencodex"] as const;
 const VALUE = { api: "openai-responses", baseURL: "http://127.0.0.1:10100/v1" };

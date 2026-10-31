@@ -26,6 +26,7 @@ import { atomicWriteFile } from "../config/atomic-write";
 import { getConfigDir } from "../config/paths";
 import { readBoundedResponseBytes } from "../lib/bounded-body";
 import { resolveMetadataProvider } from "../generated/model-metadata";
+import { ckeyPricingVersion } from "./ckey-pricing";
 
 const SOURCE_URL = "https://models.dev/api.json";
 const FILENAME = "models-dev-pricing-cache.json";
@@ -160,7 +161,7 @@ function serialize(snapshot: ModelsDevPriceSnapshot): string {
 
 /** Monotonic content version; retained usage aggregates rebuild when it moves. */
 export function modelsDevPricingVersion(): number {
-  return catalogVersion;
+  return catalogVersion + ckeyPricingVersion();
 }
 
 /** The provider key this catalog is keyed by, following opencodex aliases. */

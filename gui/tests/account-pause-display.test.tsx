@@ -36,7 +36,7 @@ test.each(LOCALES)("all pause reasons and partial-success copy exist in $code", 
   expect(DICTS[code]["prov.keyResumedSwitchFailed"].length).toBeGreaterThan(20);
 });
 
-test.each(["fr", "ko"] as const)("provider OAuth and key tooltips use the app locale %s", locale => {
+test.each(["en"] as const)("provider OAuth and key tooltips use the app locale %s", locale => {
   const t = translator(locale);
   const expected = `${t("accountPause.reason.subscriptionExpired")} · ${new Date(details.pausedAt).toLocaleString(locale)}`;
   for (const authMode of ["oauth", "key"] as const) {
@@ -55,7 +55,7 @@ test.each(["fr", "ko"] as const)("provider OAuth and key tooltips use the app lo
 });
 
 test("Codex tooltip shares the translated reason and app locale date", () => {
-  const locale = "fr";
+  const locale = "en";
   const t = translator(locale);
   const noop = () => {};
   const win = render(<CodexAccountPoolCards
@@ -73,6 +73,6 @@ test("Codex tooltip shares the translated reason and app locale date", () => {
 });
 
 test("unknown display reasons use a translated pause label", () => {
-  expect(formatAccountPauseTooltip(translator("ko"), "ko", { reason: "future_reason", pausedAt: NaN }))
-    .toBe(DICTS.ko["codexAuth.paused"]);
+  expect(formatAccountPauseTooltip(translator("en"), "en", { reason: "future_reason", pausedAt: NaN }))
+    .toBe(DICTS.en["codexAuth.paused"]);
 });

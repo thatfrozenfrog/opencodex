@@ -221,7 +221,6 @@ export type ExportClientId =
   | "workbuddy-ai"
   | "opencode"
   | "pi"
-  | "omp"
   | "hermes"
   | "openclaw"
   | "kimi"
@@ -249,7 +248,7 @@ export interface ExportClientSpec {
   apiKeyEnv: string;
   /** Shell line the user runs before launching the client. */
   exportHint: string;
-  build: (ctx: ExportContext) => unknown;
+  build: (ctx: ExportContext) => object;
   /**
    * Text format of the client's config file. `filename` already carries the
    * extension; this drives serialization and the download media type so no

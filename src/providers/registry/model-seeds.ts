@@ -121,7 +121,7 @@ export const ZAI_GLM_5X_SIDECAR_VISION_MODELS = ZAI_GLM_5X_MODELS.filter(id => i
  * `noVisionModels` already keeps Flash out of the vision sidecar, but that is a NEGATIVE
  * statement: it stops a detour without telling the catalog what the model can read. With
  * no `modelInputModalities` entry, `configuredInputModalities` returns undefined and the
- * catalog falls through to the `["text"]` floor, so every client export (ZCode, Pi, OMP)
+ * catalog falls through to the `["text"]` floor, so every client export (ZCode and Pi)
  * listed a native VLM as text-only and its picker refused to attach an image.
  *
  * The Responses sibling row below already declares this positively, so the same model was

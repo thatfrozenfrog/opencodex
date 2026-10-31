@@ -2,7 +2,7 @@ use crate::{
     exit::{self, ExitReason},
     formatting, popup,
     proxy::ProxyClient,
-    updater, widget, window,
+    updater, window,
 };
 use serde_json::Value;
 use std::sync::{
@@ -46,10 +46,11 @@ impl Default for TrayState {
 #[cfg(any(not(target_os = "macos"), test))]
 fn tray_icon_bytes(pending: bool) -> &'static [u8] {
     if pending {
-        include_bytes!("../icons/tray/icon-update.png")
-    } else {
-        include_bytes!("../icons/tray/icon.png")
+        let bytes: &'static [u8] = include_bytes!("../icons/tray/icon-update.png");
+        return bytes;
     }
+    let bytes: &'static [u8] = include_bytes!("../icons/tray/icon.png");
+    bytes
 }
 
 fn apply_update_indicator(app: &AppHandle, pending: bool) {
@@ -269,7 +270,6 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
         .build(app)?;
 
     apply_update_indicator(app, update_pending(app));
-    refresh(app, &tray);
     let tray = tray.clone();
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
@@ -285,10 +285,6 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
                 continue;
             };
             refresh_title(&app, &tray, &proxy);
-            tick += 1;
-            if tick % 5 == 0 {
-                widget::refresh(&proxy);
-            }
         }
     });
     Ok(())
@@ -302,7 +298,6 @@ fn refresh(app: &AppHandle, tray: &tauri::tray::TrayIcon<Wry>) {
         return;
     };
     refresh_title(app, tray, &proxy);
-    widget::refresh(&proxy);
 }
 
 /// Take a copy of the menu handles, holding the lock only for the copy.

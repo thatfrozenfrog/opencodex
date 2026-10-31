@@ -25,6 +25,7 @@ interface BillAsDialogProps {
   provider: string;
   model: string;
   providerLabel: string;
+  dropdown?: boolean;
   onSaved: () => void;
   onClose: () => void;
 }
@@ -58,7 +59,7 @@ function parseCandidate(value: unknown): Candidate | null {
 }
 
 export default function BillAsDialog({
-  apiBase, provider, model, providerLabel, onSaved, onClose,
+  apiBase, provider, model, providerLabel, dropdown = false, onSaved, onClose,
 }: BillAsDialogProps) {
   const { locale, t } = useI18n();
   const id = useId();
@@ -187,7 +188,22 @@ export default function BillAsDialog({
           </div>
           {phase === "loading" && <p role="status" className="muted small">{t("usage.billAs.loading")}</p>}
           {phase === "empty" && <p role="status" className="muted small">{t("usage.billAs.empty")}</p>}
-          {(phase === "ready" || phase === "saving") && candidates.length > 0 && (
+          {(phase === "ready" || phase === "saving") && candidates.length > 0 && dropdown && (
+            <label>
+              {t("usage.billAs.candidates")}
+              <select value={selected} disabled={saving} onChange={event => { setSelected(Number(event.target.value)); setErrorKey(null); }}>
+                {candidates.map((candidate, index) => (
+                  <option key={`${candidate.provider}/${candidate.model}`} value={index}>
+                    {candidate.provider}/{candidate.model} — {t("usage.billAs.rates", {
+                      input: rateFormat.format(candidate.price.input), output: rateFormat.format(candidate.price.output),
+                      cacheRead: rateFormat.format(candidate.price.cacheRead), cacheWrite: rateFormat.format(candidate.price.cacheWrite),
+                    })}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {(phase === "ready" || phase === "saving") && candidates.length > 0 && !dropdown && (
             <fieldset className="bill-as-candidates" disabled={saving}>
               <legend className="sr-only">{t("usage.billAs.candidates")}</legend>
               {candidates.map((candidate, index) => (

@@ -3,8 +3,8 @@
  *
  * Two hashes, because the two questions are genuinely independent: the FILE
  * hash identifies the exact result for restore and for clients whose writer
- * re-serializes the whole document. The BLOCK hash identifies OMP's surgically
- * patched fragment and detects catalog drift. One hash cannot safely answer
+ * re-serializes the whole document. The BLOCK hash identifies a managed
+ * fragment and detects catalog drift. One hash cannot safely answer
  * both questions in a shared client config.
  *
  * Design of record: devlog/_fin/260802_client_toggle_api/021 §2.

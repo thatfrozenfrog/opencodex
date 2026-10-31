@@ -15,7 +15,6 @@ import {
   isExportClientId,
   normalizeExportModels,
   opencodeProviderBlocks,
-  ompModelsConfigPath,
   type DshGeneratedConfig,
   type ExportContext,
   type ExportModel,
@@ -29,7 +28,6 @@ import { removeTreeWithRetry } from "../helpers/remove-tree";
 import * as facade from "../../src/clients/config-export";
 import { OPENCODE_PROVIDER_BLOCK_DEFAULT_CONFIG as leafDefaultConfig } from "../../src/clients/config-export/constants";
 import { normalizeExportModels as leafNormalizeExportModels } from "../../src/clients/config-export/model-metadata";
-import * as omp from "../../src/clients/config-export/omp";
 import * as dsh from "../../src/clients/config-export/dsh";
 import * as mcode from "../../src/clients/config-export/mcode";
 import * as raycast from "../../src/clients/config-export/raycast";
@@ -97,7 +95,6 @@ describe("split config-export public facade", () => {
     expect(facade.OPENCODE_PROVIDER_BLOCK_DEFAULT_CONFIG).toBe(leafDefaultConfig);
     expect(facade.normalizeExportModels).toBe(leafNormalizeExportModels);
     const leaves = [
-      ["omp", omp.buildOmpClientConfig, omp.summarizeOmp, omp.buildOmpContribution],
       ["dsh", dsh.buildDshClientConfig, dsh.summarizeDsh, dsh.buildDshContribution],
       ["mcode", mcode.buildMcodeClientConfig, mcode.summarizeMcode, mcode.buildMcodeContribution],
       ["zcode", zcode.buildZcodeClientConfig, zcode.summarizeZcode, zcode.buildZcodeContribution],
@@ -116,7 +113,6 @@ describe("split config-export public facade", () => {
       inputModalities: ["text", "image"], reasoningEfforts: ["none", "high"],
     }] });
     const cases = [
-      ["omp", ["providers", "opencodex"], '{"providers":{"opencodex":{"baseUrl":"http://127.0.0.1:10100/v1","api":"openai-completions","apiKey":"opencodex-loopback","models":[{"id":"test/known","name":"known (test)","input":["text","image"],"contextWindow":8192,"maxTokens":8192,"reasoning":true,"thinking":{"mode":"effort","efforts":["high"]}}]}}}'],
       ["dsh", ["llm-pi-ai", "providers", "opencodex"], '{"llm-pi-ai":{"providers":{"opencodex":{"displayName":"OpenCodex","api":"openai-responses","baseURL":"http://127.0.0.1:10100/v1","headers":{"Authorization":"Bearer ocx_data_dsh"},"models":[{"id":"test/known","name":"known (test)","input":["text","image"],"contextWindow":8192,"reasoningEfforts":{"high":"high"}}]}}}}'],
       ["mcode", ["custom_provider", "opencodex"], '{"custom_provider":{"opencodex":{"name":"OpenCodex","kind":"custom","enabled":true,"api":"anthropic-messages","options":{"apiKey":"opencodex-loopback","baseURL":"http://127.0.0.1:10100","authMode":"api-key"},"models":{"test/known":{"limit":{"context":8192},"thinking":{"effortOptions":["high"]}}}}}}'],
       ["zcode", ["provider", "opencodex"], '{"provider":{"opencodex":{"name":"OpenCodex","kind":"openai","enabled":true,"source":"custom","options":{"apiKey":"opencodex-loopback","baseURL":"http://127.0.0.1:10100/v1","apiKeyRequired":true},"models":{"test/known":{"name":"known (test)","modalities":{"input":["text","image"],"output":["text"]},"limit":{"context":8192},"reasoning":{"enabled":true,"variants":["high"]}}}}}}'],
@@ -422,92 +418,6 @@ describe("Pi serializer (accept criterion 2)", () => {
       .map(entry => entry.name)
       .sort();
     expect(piNames).toEqual(opencodeNames);
-  });
-});
-
-describe("OMP serializer", () => {
-  test("writes the full routed catalog in OMP's models.yml provider shape", () => {
-    const built = buildClientConfigText("omp", ctx());
-    expect(built.format).toBe("yaml");
-    const document = buildClientConfig("omp", ctx()) as PiGeneratedConfig;
-    expect(document.providers.opencodex!.models.map(model => model.id)).toEqual([
-      "anthropic/claude-opus-5",
-      "custom/no-context",
-      "gpt-5.6-luna",
-      "tiny/small-ctx",
-    ]);
-    expect(built.text).toContain("providers:");
-    expect(built.text).toContain("anthropic/claude-opus-5");
-    expect(built.text).toContain("apiKey: opencodex-loopback");
-  });
-
-  test("keeps the provider on completions while opting native OpenAI models into Responses", () => {
-    const models = [
-      {
-        namespaced: "gpt-5.6-terra",
-        native: true,
-        provider: "openai",
-        id: "gpt-5.6-terra",
-        contextWindow: 272_000,
-        inputModalities: ["text", "image"],
-        reasoningEfforts: ["low", "high"],
-        defaultReasoningEffort: "high",
-      },
-      {
-        namespaced: "command-code/muse-spark-1.2",
-        provider: "command-code",
-        id: "muse-spark-1.2",
-        contextWindow: 128_000,
-        reasoningEfforts: ["medium", "xhigh"],
-      },
-    ] satisfies ExportModel[];
-    const document = buildClientConfig("omp", ctx({ models })) as {
-      providers: { opencodex: { api: string; models: Array<Record<string, unknown>> } };
-    };
-    const provider = document.providers.opencodex;
-    expect(provider.api).toBe("openai-completions");
-
-    const native = provider.models.find(model => model.id === "gpt-5.6-terra")!;
-    expect(native.api).toBe("openai-responses");
-    expect(native.input).toEqual(["text", "image"]);
-    expect(native.reasoning).toBe(true);
-    expect(native.thinking).toEqual({ mode: "effort", efforts: ["low", "high"], defaultLevel: "high" });
-
-    const routed = provider.models.find(model => model.id === "command-code/muse-spark-1.2")!;
-    expect(routed).not.toHaveProperty("api");
-  });
-
-  test("emits OMP reasoning metadata only for the accepted effort vocabulary", () => {
-    const document = buildClientConfig("omp", ctx({
-      models: [{
-        namespaced: "gpt-5.6-luna",
-        native: true,
-        provider: "openai",
-        id: "gpt-5.6-luna",
-        reasoningEfforts: [" LOW ", "high", "ultra", "none", "high"],
-        defaultReasoningEffort: "ULTRA",
-      }],
-    })) as {
-      providers: { opencodex: { models: Array<Record<string, unknown>> } };
-    };
-    const model = document.providers.opencodex.models[0]!;
-    expect(model.reasoning).toBe(true);
-    expect(model.thinking).toEqual({ mode: "effort", efforts: ["low", "high"] });
-  });
-
-  test("does not emit reasoning or thinking when no supported efforts are declared", () => {
-    const document = buildClientConfig("omp", ctx({
-      models: [{
-        namespaced: "command-code/muse-spark-1.2",
-        provider: "command-code",
-        id: "muse-spark-1.2",
-        reasoningEfforts: ["ultra", "none"],
-      }],
-    })) as {
-      providers: { opencodex: { models: Array<Record<string, unknown>> } };
-    };
-    expect(document.providers.opencodex.models[0]).not.toHaveProperty("reasoning");
-    expect(document.providers.opencodex.models[0]).not.toHaveProperty("thinking");
   });
 });
 
@@ -851,7 +761,7 @@ describe("hub-resolved Fast exports", () => {
 
 describe("EXPORT_CLIENTS registry", () => {
   test("covers exactly the twenty-three file-toggle clients", () => {
-    expect(EXPORT_CLIENT_IDS).toEqual(["qoder", "qoder-cn", "workbuddy", "workbuddy-ai", "opencode", "pi", "omp", "hermes", "openclaw", "kimi", "gajae", "dsh", "mcode", "zcode", "commandcode", "prime", "aside", "raycast", "omo", "cline", "kilo", "droid", "gentle-shell"]);
+    expect(EXPORT_CLIENT_IDS).toEqual(["qoder", "qoder-cn", "workbuddy", "workbuddy-ai", "opencode", "pi", "hermes", "openclaw", "kimi", "gajae", "dsh", "mcode", "zcode", "commandcode", "prime", "aside", "raycast", "omo", "cline", "kilo", "droid", "gentle-shell"]);
     for (const id of EXPORT_CLIENT_IDS) expect(isExportClientId(id)).toBe(true);
     // The exception clients keep their own surfaces and are not export clients.
     expect(isExportClientId("claude-desktop")).toBe(false);
@@ -1046,7 +956,6 @@ describe("EXPORT_CLIENTS registry", () => {
   test("filenames name the destination file, not the product", () => {
     expect(EXPORT_CLIENTS.opencode.filename).toBe("opencode.json");
     expect(EXPORT_CLIENTS.pi.filename).toBe("pi-models.json");
-    expect(EXPORT_CLIENTS.omp.filename).toBe("omp-models.yaml");
     expect(EXPORT_CLIENTS.hermes.filename).toBe("hermes-config.yaml");
     expect(EXPORT_CLIENTS.openclaw.filename).toBe("openclaw.json5");
     expect(EXPORT_CLIENTS.kimi.filename).toBe("kimi-config.toml");
@@ -1065,46 +974,6 @@ describe("EXPORT_CLIENTS registry", () => {
 
   test("the pi destination is the documented global models file", () => {
     expect(EXPORT_CLIENTS.pi.destination({} as NodeJS.ProcessEnv)).toBe(join(homedir(), ".pi", "agent", "models.json"));
-  });
-
-  test("the OMP destination follows its global agent directory and profile selectors", () => {
-    const home = mkdtempSync(join(tmpdir(), "ocx-omp-destination-"));
-    try {
-      const defaultAgentDir = join(home, ".omp", "agent");
-      expect(ompModelsConfigPath({} as NodeJS.ProcessEnv, home)).toBe(join(defaultAgentDir, "models.yml"));
-
-      mkdirSync(defaultAgentDir, { recursive: true });
-      writeFileSync(join(defaultAgentDir, "models.yaml"), "providers: {}\n");
-      expect(ompModelsConfigPath({} as NodeJS.ProcessEnv, home)).toBe(join(defaultAgentDir, "models.yaml"));
-      writeFileSync(join(defaultAgentDir, "models.yml"), "providers: {}\n");
-      expect(ompModelsConfigPath({} as NodeJS.ProcessEnv, home)).toBe(join(defaultAgentDir, "models.yml"));
-
-      const configDir = "custom-omp";
-      const configRoot = join(home, configDir);
-      const profiled = { OMP_PROFILE: "work", PI_CONFIG_DIR: configDir } as NodeJS.ProcessEnv;
-      expect(ompModelsConfigPath(profiled, home)).toBe(
-        join(configRoot, "profiles", "work", "agent", "models.yml"),
-      );
-      expect(ompModelsConfigPath({ PI_CONFIG_DIR: configDir } as NodeJS.ProcessEnv, home)).toBe(
-        join(configRoot, "agent", "models.yml"),
-      );
-      expect(ompModelsConfigPath({ PI_PROFILE: "legacy", PI_CONFIG_DIR: configDir } as NodeJS.ProcessEnv, home)).toBe(
-        join(configRoot, "profiles", "legacy", "agent", "models.yml"),
-      );
-      // OMP_PROFILE wins by presence, so an explicit blank selects the default
-      // profile instead of inheriting a legacy PI_PROFILE.
-      expect(ompModelsConfigPath({
-        OMP_PROFILE: "  ",
-        PI_PROFILE: "legacy",
-        PI_CONFIG_DIR: configDir,
-      } as NodeJS.ProcessEnv, home)).toBe(
-        join(configRoot, "agent", "models.yml"),
-      );
-      expect(() => ompModelsConfigPath({ OMP_PROFILE: ".." } as NodeJS.ProcessEnv, home)).toThrow(ClientPathError);
-      expect(() => ompModelsConfigPath({ OMP_PROFILE: "NUL.txt" } as NodeJS.ProcessEnv, home)).toThrow(ClientPathError);
-    } finally {
-      removeTreeWithRetry(home);
-    }
   });
 
   test("apiKeyEnv and exportHint name the variable the config references", () => {
@@ -1186,7 +1055,7 @@ describe("authoritative client output limits (#5828)", () => {
       const context = ctx({ models: [model] });
       const block = opencodeConfig(context).provider.opencodex!;
       expect(block.models[model.namespaced]!.limit!.output).toBe(expected);
-      for (const client of ["pi", "omp", "gajae"] as const) {
+      for (const client of ["pi", "gajae"] as const) {
         const config = buildClientConfig(client, context) as PiGeneratedConfig;
         expect(config.providers.opencodex!.models[0]!.maxTokens).toBe(expected);
       }
@@ -1198,7 +1067,7 @@ test("explicit output metadata takes precedence and survives Fast expansion", ()
   for (const maxTokens of [60_000, 300_000, 0, NaN, Infinity]) {
     const model: ExportModel = { provider: "anthropic", id: "claude-opus-5", namespaced: "anthropic/claude-opus-5", contextWindow: 200_000, maxTokens, fastRowAvailable: true };
     const expected = maxTokens > 0 && Number.isFinite(maxTokens) ? Math.min(maxTokens, 200_000) : 128_000;
-    for (const client of ["pi", "omp", "gajae"] as const) {
+    for (const client of ["pi", "gajae"] as const) {
       const config = buildClientConfig(client, ctx({ models: [model] })) as PiGeneratedConfig;
       expect(config.providers.opencodex!.models).toHaveLength(2);
       for (const entry of config.providers.opencodex!.models) expect(entry.maxTokens).toBe(expected);

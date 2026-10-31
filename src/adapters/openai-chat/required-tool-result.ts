@@ -7,7 +7,7 @@ import { isTruncatedStopReason } from "../../responses/truncated-stop-reason";
 function requiresClientCall(parsed: OcxParsedRequest): boolean {
   if (!requiresToolCall(parsed.options.toolChoice)) return false;
   // Sidecars own their own tool lifecycle; this boundary validates client-executed calls only.
-  return !(parsed.context.tools ?? []).some(t => t.webSearch || t.imageGeneration || t.videoGeneration || t.advisor);
+  return !(parsed.context.tools ?? []).some(t => t.webSearch || t.imageGeneration || t.videoGeneration);
 }
 
 function terminalGuard(required: boolean): (event: AdapterEvent) => AdapterEvent {

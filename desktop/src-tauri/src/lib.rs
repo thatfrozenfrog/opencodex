@@ -56,7 +56,6 @@ mod supervisor;
 mod tray;
 mod tray_availability;
 mod updater;
-mod widget;
 mod window;
 
 use std::sync::{

@@ -27,7 +27,7 @@ both JSON and SSE conversions; ordinary locally hidden envelope text remains und
 
 `src/responses/assistant-replay.ts` preserves text, empty signed blocks, signature updates and
 redacted blocks in order for the internal continuation builders in
-`src/server/responses/terminal-guard.ts` and `src/server/responses/advisor-slot.ts`.
+`src/server/responses/terminal-guard.ts`.
 The hosted tool loops in `src/web-search/loop.ts`, `src/web-search/run-turn-loop.ts` and
 `src/images/loop.ts` reconstruct progress events as signed thinking parts. Search's early
 commentary path retains these events for the next iteration.

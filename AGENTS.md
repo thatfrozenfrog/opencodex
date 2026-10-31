@@ -285,8 +285,7 @@ adds a consumer keyed by it produces a merge that typechecks in neither directio
 
 `typecheck` precedes every job, so one missing member is not one red suite. It took down
 fourteen checks on `dev` — all four test shards, `docker smoke`, `storage policy`,
-`api usage` and all three `npm-global` smokes — when a closed translation namespace still
-listed nine locales after a tenth had landed.
+`api usage` and all three `npm-global` smokes — when a closed compatibility namespace omitted a new supported member.
 
 Counts drift the same way and more quietly, because both sides write a plausible number.
 Two branches each added one CLI capability and each wrote `47`; the merged truth was 48.
@@ -463,7 +462,8 @@ reviewers (Codex, CodeRabbit).
   focused files and use `bun run test:changed` for import-connected coverage as
   described above. Full-suite validation is the default before review readiness;
   the documented resource exception still requires focused regression tests.
-- **Docs sync:** user-facing behavior changes should update `docs-site/` (and
-  keep translated locales from contradicting the English source).
+- **Docs sync:** user-facing behavior changes should update the English-only `docs-site/`.
 - **Privacy:** `bun run privacy:scan` must stay green; never introduce logging
   of request bodies, API keys, or account identifiers.
+
+@RTK.md

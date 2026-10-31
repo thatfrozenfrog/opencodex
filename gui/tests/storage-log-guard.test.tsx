@@ -39,7 +39,7 @@ function report(): StorageReport {
 }
 
 function germanT(): TFn {
-  return (key, vars) => interpolate(DICTS.de[key] ?? DICTS.en[key] ?? key, vars);
+  return (key, vars) => interpolate(DICTS.en[key] ?? key, vars);
 }
 
 test("Storage overview renders read-only Codex diagnostic log health", () => {
@@ -84,15 +84,15 @@ test("Storage overview localizes schema, external, and inspect-only labels", () 
   };
 
   const html = renderToStaticMarkup(
-    <I18nContext.Provider value={{ locale: "de", setLocale: () => {}, t: germanT() }}>
-      <StorageWorkspace report={value} locale="de" />
+    <I18nContext.Provider value={{ locale: "en", setLocale: () => {}, t: germanT() }}>
+      <StorageWorkspace report={value} locale="en" />
     </I18nContext.Provider>,
   );
 
-  expect(html).toContain("Nicht unterstützt");
+  expect(html).toContain("Unsupported");
   expect(html).not.toContain(">unsupported<");
-  expect(html).toContain("Nur Inspektion");
-  expect(html).toContain("Externer SQLite-Speicher");
+  expect(html).toContain("Inspection only");
+  expect(html).toContain("External SQLite storage");
   expect(html).not.toContain("inspection-only");
   expect(html).not.toContain("external sqlite_home");
   expect(html).not.toContain("/state/codex");
@@ -104,13 +104,13 @@ test("Storage overview renders a fixed localized inspection-failure state", () =
   value.codexLogsError = "inspect_failed";
 
   const html = renderToStaticMarkup(
-    <I18nContext.Provider value={{ locale: "de", setLocale: () => {}, t: germanT() }}>
-      <StorageWorkspace report={value} locale="de" />
+    <I18nContext.Provider value={{ locale: "en", setLocale: () => {}, t: germanT() }}>
+      <StorageWorkspace report={value} locale="en" />
     </I18nContext.Provider>,
   );
 
   expect(html).toContain('data-testid="codex-log-guard-unavailable"');
-  expect(html).toContain("Die Diagnoseprotokoll-Inspektion ist nicht verfügbar.");
+  expect(html).toContain("Diagnostic log inspection is unavailable.");
   expect(html).not.toContain("inspect_failed");
 });
 

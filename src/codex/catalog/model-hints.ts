@@ -785,7 +785,7 @@ export function catalogHintsFromModelsApiItem(providerName: string, item: Provid
   // Some OpenAI-compatible catalogs expose the selectable ladder under
   // `reasoning_parameters.efforts` instead of the older `reasoning_efforts` key.
   // Treat both as model metadata: otherwise a valid upstream capability disappears
-  // before client exporters (including omp) can advertise it.
+  // before client exporters can advertise it.
   const reasoningParameters = plainRecord(item.reasoning_parameters)
     ?? plainRecord(metadata?.reasoning_parameters)
     ?? plainRecord(capabilityRecord?.reasoning_parameters);

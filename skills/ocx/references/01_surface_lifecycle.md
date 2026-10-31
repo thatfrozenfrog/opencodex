@@ -8,7 +8,7 @@
 Use these declarations to choose a task, then check its flags and authority before execution.
 Non-mutating probes may still contact providers, consume quota or refresh caches.
 
-Declared capabilities: 14.
+Declared capabilities: 13.
 
 ### `ocx codex-provider`
 
@@ -25,16 +25,6 @@ Drives no management route.
 | `--yes` | boolean | Explicitly approve the named provider without an interactive prompt. |
 
 - Only local loopback routing for Responses providers using OpenAI authentication is supported. No custom credentials/headers, authless mode or client compaction. Unapproved providers are never changed.
-
-### `ocx chatgpt`
-
-Experimental ChatGPT app-server shim: launch, restore or status (macOS only).
-
-State-changing: yes. JSON mode: `none`.
-
-Drives no management route.
-
-- Default off; launch requires chatgptDesktop.appServerShim: true. Restore removes the generated launcher.
 
 ### `ocx status`
 

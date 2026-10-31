@@ -2,7 +2,7 @@ import ClaudeInterceptStart from "../components/ClaudeInterceptStart";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useClaudeConnection } from "./use-claude-connection";
 import { Notice, Switch } from "../ui";
-import { useI18n, useT, LOCALES, type TKey } from "../i18n/shared";
+import { useT, type TKey } from "../i18n/shared";
 import { readJsonOrThrow } from "../fetch-json";
 import { readSessionListCacheEntry, writeSessionListCacheEntry } from "../session-list-cache";
 import { useDataSurface } from "../data-surface";
@@ -109,8 +109,7 @@ function CcwSection({ title, count, children }: { title: string; count?: number;
 
 export default function ClaudeCode({ apiBase, active = true }: { apiBase: string; active?: boolean }) {
   const t = useT();
-  const { locale } = useI18n();
-  const localeTag = LOCALES.find(l => l.code === locale)?.htmlLang ?? "en";
+  const localeTag = "en";
   const cacheKey = `ocx.claude-code.v1:${apiBase}`;
   const resourceKey = `claude-code:${apiBase}`;
   const cachedEntry = useMemo(() => readSessionListCacheEntry<CachedClaudeCode>(cacheKey), [cacheKey]);

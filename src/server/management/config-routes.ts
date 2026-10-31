@@ -331,7 +331,7 @@ export async function syncEnabledClientIntegrations(
     config,
     port,
   }, unattended
-    ? ["mcode", "pi", "aside", "raycast", "omo", "commandcode", "droid", "opencode", "kilo", "qoder", "qoder-cn", "workbuddy", "workbuddy-ai"]
+    ? ["mcode", ...(config.clientIntegrations?.pi === false ? [] : ["pi" as const]), "aside", "raycast", "omo", "commandcode", "droid", "opencode", "kilo", "qoder", "qoder-cn", "workbuddy", "workbuddy-ai"]
     : ["mcode", "pi", "aside", "raycast", "omo", "cline", "commandcode", "droid", "opencode", "kilo", "qoder", "qoder-cn", "workbuddy", "workbuddy-ai"],
   ...unattended ? [{ refreshOnly: true, admit }] as const : []));
 
@@ -426,6 +426,9 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       ultraFastTier: config.ultraFastTier === true,
       // Absent means on by default: the GUI renders a switch enabled unless explicit false.
       fastRows: config.fastRows !== false,
+      clientIntegrations: {
+        pi: config.clientIntegrations?.pi !== false,
+      },
       codexMainAccountHardLock: isMainAccountHardLockEnabled(config),
       // Absent means off: the fallback is an extension of the lock, so the GUI renders
       // the extended fields empty unless an explicit section exists.
@@ -535,6 +538,7 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       showCodexCredits?: unknown;
       ultraFastTier?: unknown;
       fastRows?: unknown;
+      clientIntegrations?: unknown;
       codexMainAccountHardLock?: unknown;
       codexMainAccountHardLockThresholds?: unknown;
       codexMainAccountHardLockFallback?: unknown;
@@ -554,6 +558,7 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       && body.showCodexCredits === undefined
       && body.ultraFastTier === undefined
       && body.fastRows === undefined
+      && body.clientIntegrations === undefined
       && body.codexMainAccountHardLock === undefined
       && body.codexMainAccountHardLockThresholds === undefined
       && body.codexMainAccountHardLockFallback === undefined
@@ -563,7 +568,7 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       && body.compactionRecovery === undefined
       && body.reasoningRetention === undefined
       && body.memoryModels === undefined) {
-      return jsonResponse({ error: "provide codexAutoStart, streamMode, appOwnedMemoryBudgetMb, codexAccountPickerEnabled, codexQuotaAutoRefresh, oauthOpenBrowser, showCodexCredits, ultraFastTier, fastRows, codexMainAccountHardLock, codexMainAccountHardLockThresholds, codexMainAccountHardLockFallback, codexDesktopAuthless, codexClientCompaction, compactionRouting, compactionRecovery, reasoningRetention, or memoryModels" }, 400);
+      return jsonResponse({ error: "provide codexAutoStart, streamMode, appOwnedMemoryBudgetMb, codexAccountPickerEnabled, codexQuotaAutoRefresh, oauthOpenBrowser, showCodexCredits, ultraFastTier, fastRows, codexMainAccountHardLock, codexMainAccountHardLockThresholds, codexMainAccountHardLockFallback, codexDesktopAuthless, codexClientCompaction, compactionRouting, compactionRecovery, reasoningRetention, memoryModels, or clientIntegrations" }, 400);
     }
     if (body.codexAutoStart !== undefined && typeof body.codexAutoStart !== "boolean") {
       return jsonResponse({ error: "codexAutoStart boolean is required" }, 400);
@@ -586,6 +591,13 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
     }
     if (body.fastRows !== undefined && typeof body.fastRows !== "boolean") {
       return jsonResponse({ error: "fastRows boolean is required" }, 400);
+    }
+    if (body.clientIntegrations !== undefined) {
+      if (!isPlainRecord(body.clientIntegrations)
+        || Object.keys(body.clientIntegrations).some(key => key !== "pi")
+        || Object.values(body.clientIntegrations).some(value => typeof value !== "boolean")) {
+        return jsonResponse({ error: "clientIntegrations must contain only pi boolean values" }, 400);
+      }
     }
     if (body.codexMainAccountHardLock !== undefined && typeof body.codexMainAccountHardLock !== "boolean") {
       return jsonResponse({ error: "codexMainAccountHardLock boolean is required" }, 400);
@@ -688,6 +700,8 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       hasUltraFastTier: Object.hasOwn(config, "ultraFastTier"),
       fastRows: config.fastRows,
       hasFastRows: Object.hasOwn(config, "fastRows"),
+      clientIntegrations: config.clientIntegrations,
+      hasClientIntegrations: Object.hasOwn(config, "clientIntegrations"),
       codexMainAccountHardLockThresholds: config.codexMainAccountHardLockThresholds,
       hasCodexMainAccountHardLockThresholds: Object.hasOwn(config, "codexMainAccountHardLockThresholds"),
       codexMainAccountHardLock: config.codexMainAccountHardLock,
@@ -704,6 +718,7 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
     const authlessWasEnabled = config.codexDesktopAuthless === true;
     const clientCompactionWasEnabled = config.codexClientCompaction === true;
     const fastRowsWasEnabled = config.fastRows !== false;
+    const previousAutoReload = config.clientIntegrations?.pi !== false;
     try {
       if (typeof body.codexAutoStart === "boolean") {
         config.codexAutoStart = body.codexAutoStart;
@@ -734,6 +749,17 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       else if (body.ultraFastTier === false) deleteConfigTopLevelKey(config, "ultraFastTier");
       if (body.fastRows === false) config.fastRows = false;
       else if (body.fastRows === true) deleteConfigTopLevelKey(config, "fastRows");
+      if (body.clientIntegrations && typeof body.clientIntegrations === "object") {
+        const toggles = body.clientIntegrations as Record<string, unknown>;
+        const integrations = { ...(config.clientIntegrations ?? {}) };
+        for (const client of ["pi"] as const) {
+          if (typeof toggles[client] !== "boolean") continue;
+          if (toggles[client]) delete integrations[client];
+          else integrations[client] = false;
+        }
+        if (Object.keys(integrations).length > 0) config.clientIntegrations = integrations;
+        else deleteConfigTopLevelKey(config, "clientIntegrations");
+      }
       // Inverted from the pair above because the default is on (#5694): off is the persisted
       // decision, so it writes `false`, while on deletes the key and returns to the default.
       if (hardLockThresholds !== undefined) config.codexMainAccountHardLockThresholds = { ...hardLockThresholds };
@@ -795,6 +821,8 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       if (previousSettings.hasFastRows) {
         config.fastRows = previousSettings.fastRows;
       } else deleteConfigTopLevelKey(config, "fastRows");
+      if (previousSettings.hasClientIntegrations) config.clientIntegrations = previousSettings.clientIntegrations;
+      else deleteConfigTopLevelKey(config, "clientIntegrations");
       if (previousSettings.hasCodexMainAccountHardLockThresholds) {
         config.codexMainAccountHardLockThresholds = previousSettings.codexMainAccountHardLockThresholds;
       } else deleteConfigTopLevelKey(config, "codexMainAccountHardLockThresholds");
@@ -821,6 +849,7 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
     const clientCompactionIsEnabled = config.codexClientCompaction === true;
     const fastRowsIsEnabled = config.fastRows !== false;
     const fastRowsChanged = fastRowsWasEnabled !== fastRowsIsEnabled;
+    const autoReloadChanged = previousAutoReload !== (config.clientIntegrations?.pi !== false);
     const desktopSwitchesChanged = authlessWasEnabled !== authlessIsEnabled
       || clientCompactionWasEnabled !== clientCompactionIsEnabled;
     // Catalog convergence is not config injection, and the comment that used to sit here said
@@ -835,6 +864,24 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       const { readRuntimePort } = await import("../../config/process-state");
       const runtime = (deps.readRuntimePort ?? readRuntimePort)(process.pid);
       await syncEnabledClientIntegrations(runtime?.port, config, deps);
+    } else if (autoReloadChanged) {
+      const { refreshOwnedCatalogIntegrations } = await import("../../integrations/catalog-refresh");
+      const { readRuntimePort } = await import("../../config/process-state");
+      const runtime = (deps.readRuntimePort ?? readRuntimePort)(process.pid);
+      try {
+        await (deps.refreshOwnedCatalogIntegrations ?? refreshOwnedCatalogIntegrations)({
+          config,
+          port: runtime?.port ?? config.port,
+          models: async () => {
+            const { loadExportModels } = await import("./model-rows");
+            return loadExportModels(config);
+          },
+        }, [
+          "pi",
+        ]);
+      } catch {
+        // Preference persistence succeeds independently from best-effort file refresh.
+      }
     }
     // Injection second, matching `syncModelsToCodex`: the injected `model_catalog_json` should
     // point at a catalog that has already settled. And it runs here rather than inside the save
@@ -860,6 +907,9 @@ export async function handleConfigRoutes(ctx: ManagementContext): Promise<Respon
       showCodexCredits: config.showCodexCredits === true,
       catalogRefreshPending,
       fastRows: config.fastRows !== false,
+      clientIntegrations: {
+        pi: config.clientIntegrations?.pi !== false,
+      },
       codexDesktopAuthless: authlessIsEnabled,
       codexClientCompaction: clientCompactionIsEnabled,
       codexDesktopSwitches,

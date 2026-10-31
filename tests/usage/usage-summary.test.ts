@@ -232,7 +232,7 @@ describe("unresolved requested model attribution", () => {
     expect(JSON.stringify(row)).toBe(before);
   });
 
-  test("mixed rows retain marker across insertion order, day partitions and cloned accumulation", () => {
+  test("mixed rows remain separate across insertion order, day partitions and cloned accumulation", () => {
     const marked = fallback("qwen3.8-max");
     const ordinary = { ...marked, requestId: "ordinary", timestamp: FIXED_NOW - 86_400_000, routeDecision: undefined };
     for (const rows of [[marked, ordinary], [ordinary, marked]]) {
@@ -241,15 +241,17 @@ describe("unresolved requested model attribution", () => {
       const cloned = accumulator.clone();
       cloned.add(rows[1]!);
       const summary = cloned.summarize("all", FIXED_NOW);
-      expect(summary.models).toHaveLength(1);
-      expect(summary.models[0]).toMatchObject({ requests: 2, totalTokens: 76, hasUnresolvedRequestedModel: true });
+      expect(summary.models).toHaveLength(2);
+      expect(summary.models.find(model => model.hasUnresolvedRequestedModel)).toMatchObject({ requests: 1, totalTokens: 38 });
+      expect(summary.models.find(model => !model.hasUnresolvedRequestedModel)).toMatchObject({ requests: 1, totalTokens: 38 });
       expect(summary.days.flatMap(day => day.models).filter(model => model.hasUnresolvedRequestedModel)).toHaveLength(1);
     }
     const sameDay = { ...ordinary, timestamp: marked.timestamp };
     for (const rows of [[marked, sameDay], [sameDay, marked]]) {
       const summary = summarizeUsage(rows, "all", FIXED_NOW);
-      expect(summary.models[0]).toMatchObject({ requests: 2, totalTokens: 76, hasUnresolvedRequestedModel: true });
-      expect(summary.days.flatMap(day => day.models)[0]?.hasUnresolvedRequestedModel).toBe(true);
+      expect(summary.models).toHaveLength(2);
+      expect(summary.models.find(model => model.hasUnresolvedRequestedModel)).toMatchObject({ requests: 1, totalTokens: 38 });
+      expect(summary.days.flatMap(day => day.models)).toHaveLength(2);
     }
   });
 

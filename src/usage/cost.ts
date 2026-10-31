@@ -22,6 +22,7 @@ import type { PersistedUsageAttempt, UsageStatus } from "./log";
 import { canonicalAntigravityUsageModel } from "../providers/antigravity-models";
 import { activeAccountPricingProviders, activeConfiguredProviders, activeUserCostOverlays, userCostOverlayVersion } from "./user-cost-overlays";
 import { modelsDevProviderKey, modelsDevPublishedPrice, modelsDevPricingVersion } from "./models-dev-pricing";
+import { ckeyPrice } from "./ckey-pricing";
 import {
   EXPECTED_PRICE_OVERLAYS,
   findExpectedPriceOverlay,
@@ -87,7 +88,9 @@ export interface MatchedPrice {
   modelsDevProvider?: string;
   cost4: Cost4;
   promptLengthPricing?: PromptLengthPricing;
-  source: "jawcode" | "expected" | "modelsdev" | "user";
+  source: "jawcode" | "expected" | "modelsdev" | "user" | "ckey";
+  requestPrice?: number;
+  minimumCharge?: number;
   sourceRef?: string;
   verifiedAt?: string;
   status: "verified" | "verified-derived";
@@ -245,6 +248,12 @@ export function resolveMatchedPrice(
   return resolveMatchedPriceInner(provider, modelId, overlays, userOverlays, options);
 }
 
+function calculatePriceCost(tokens: CostTokens, rates: Cost4, price: MatchedPrice): CostBreakdown {
+  const cost = calculateCost(tokens, rates);
+  cost.total = Math.max(cost.total + (price.requestPrice ?? 0), price.minimumCharge ?? 0);
+  return cost;
+}
+
 const priceMemo = new Map<string, MatchedPrice | null>();
 
 /**
@@ -287,6 +296,10 @@ function resolveMatchedPriceExact(
   // operator's explicit price is authoritative for the ~$ estimate.
   const userOverlay = userOverlayMatch(provider, modelId, userOverlays);
   if (userOverlay) return userOverlay;
+  if (provider === "ckey" || provider === "ckey-vn") {
+    const price = ckeyPrice(provider, modelId);
+    return price ? { provider, modelId, cost4: price, requestPrice: price.request, minimumCharge: price.minimum, source: "ckey", status: "verified-derived" } : null;
+  }
   if (!cursorFastPriceSupported(provider, modelId)) return null;
   const verifiedOverride = overlays === EXPECTED_PRICE_OVERLAYS
     ? findVerifiedPriceOverride(pricingFamilyProvider(provider), modelId)
@@ -790,7 +803,7 @@ export function estimateAttemptCost(
     model: attempt.model,
     tokens,
     price,
-    cost: calculateCost(tokens, effectiveCost4),
+    cost: calculatePriceCost(tokens, effectiveCost4, price),
     estimated: isEstimated(attempt.usage, attempt.usageStatus, price.status),
     ...(multiplier !== 1 ? { priorityMultiplier: multiplier } : {}),
     ...(contextTier ? { contextTier } : {}),
@@ -877,7 +890,7 @@ export function estimateRequestCost(
   return {
     tokens,
     price,
-    cost: calculateCost(tokens, effectiveCost4),
+    cost: calculatePriceCost(tokens, effectiveCost4, price),
     estimated: isEstimated(input.usage, input.usageStatus, price.status),
     ...(multiplier !== 1 ? { priorityMultiplier: multiplier } : {}),
     ...(contextTier ? { contextTier } : {}),

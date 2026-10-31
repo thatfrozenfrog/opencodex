@@ -1,30 +1,17 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { DICTS, I18nContext, LOCALES, detectInitial, interpolate, setActiveLocale, type Locale, type TFn, type TKey, type Vars } from "./shared";
-import { en } from "./en";
+import { DICTS, I18nContext, interpolate, setActiveLocale, type Locale, type TFn, type TKey, type Vars } from "./shared";
 import { useI18n } from "./shared";
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState(() => {
-    const initial = detectInitial();
-    setActiveLocale(initial);
-    return initial;
-  });
-
-  const setLocale = useCallback((next: Locale) => {
-    setActiveLocale(next);
-    setLocaleState(next);
-  }, []);
+  const [locale] = useState<Locale>("en");
+  const setLocale = useCallback((_next: Locale) => setActiveLocale("en"), []);
 
   useEffect(() => {
-    const meta = LOCALES.find(l => l.code === locale) ?? LOCALES[0];
-    document.documentElement.lang = meta.htmlLang;
-    try { localStorage.setItem("ocx-lang", locale); } catch { /* ignore */ }
-  }, [locale]);
+    document.documentElement.lang = "en";
+    try { localStorage.removeItem("ocx-lang"); } catch { /* ignore */ }
+  }, []);
 
-  const t: TFn = useCallback(
-    (key, vars) => interpolate(DICTS[locale][key] ?? en[key] ?? key, vars),
-    [locale],
-  );
+  const t: TFn = useCallback((key, vars) => interpolate(DICTS.en[key] ?? key, vars), []);
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, t]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

@@ -245,19 +245,6 @@
       ]
     },
     {
-      "path": "advisor.md",
-      "tier": 2,
-      "title": "Advisor Sidecar",
-      "scope": "The optional expert consultation sidecar: manual/preflight/adaptive policies, evidence, durable task allowance, metadata activity, and loopback routing.",
-      "documents": [
-        "src/advisor/",
-        "src/server/responses/advisor-slot.ts",
-        "src/server/responses/advisor-plan-slot.ts",
-        "src/server/inference/advisor-diagnostics.ts",
-        "src/lib/advisor-activation.ts"
-      ]
-    },
-    {
       "path": "transports/byte-accounting.md",
       "tier": 3,
       "title": "Byte Accounting",
@@ -831,17 +818,6 @@
       "title": "Codex Desktop Compatibility",
       "scope": "Windows package activation, restart context, and protected compatibility authority persistence.",
       "documents": ["src/codex/", "src/cli/"]
-    },
-    {
-      "path": "clients/chatgpt-desktop.md",
-      "tier": 5,
-      "title": "ChatGPT Desktop",
-      "scope": "Experimental macOS app-server stdout shim, opt-in launch, restore and failure boundaries.",
-      "documents": [
-        "src/chatgpt/",
-        "src/cli/",
-        "src/codex/"
-      ]
     },
     {
       "path": "clients/claude-desktop.md",

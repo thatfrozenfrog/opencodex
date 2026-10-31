@@ -44,6 +44,7 @@ export function ModelCatalogDelivery({ connected, catalogSyncedAt }: { connected
         ))}
       </ol>
       <p className="models-delivery-hint">{t("models.delivery.hint")}</p>
+      <p className="models-delivery-hint">{t("models.delivery.otherHarnesses")}</p>
     </details>
   );
 }

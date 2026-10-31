@@ -8,7 +8,6 @@ export const FILE_INTEGRATION_CLIENTS = [
   "workbuddy-ai",
   "opencode",
   "pi",
-  "omp",
   "hermes",
   "openclaw",
   "kimi",

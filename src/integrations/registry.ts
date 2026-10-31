@@ -41,8 +41,6 @@ import {
   mcodeHomeDir,
   omoAgentDir,
   omoConfigPath,
-  ompAgentDir,
-  ompModelsConfigPath,
   opencodeGlobalConfigPath,
   openclawConfigPath,
   openclawHomeDir,
@@ -316,12 +314,6 @@ export const INTEGRATION_CLIENTS: Record<IntegrationClientId, IntegrationClientS
     detectDir: (env = process.env, home = homedir()) =>
       env.PI_CODING_AGENT_DIR?.trim() ? piAgentDir(env, home) : join(home, ".pi"),
   },
-  omp: {
-    id: "omp",
-    configPath: (env = process.env, home = homedir()) => ompModelsConfigPath(env, home),
-    detectDir: (env = process.env, home = homedir()) => ompAgentDir(env, home),
-    sourcePreservingYaml: { path: ["providers", "opencodex"] },
-  },
   hermes: {
     id: "hermes",
     configPath: (env = process.env, home = homedir()) => hermesConfigPath(env, home),
@@ -424,7 +416,7 @@ export const INTEGRATION_CLIENTS: Record<IntegrationClientId, IntegrationClientS
     configPath: (env = process.env, home = homedir()) => primeConfigPath(env, home),
     // The agent directory, not its parent: `PRIME_AGENT_CODING_AGENT_DIR` names
     // that directory directly, so there is no parent to test when the override
-    // is set. Same choice as OMP, whose detect signal is `ompAgentDir`.
+    // is set.
     detectDir: (env = process.env, home = homedir()) => primeAgentDir(env, home),
   },
   aside: {

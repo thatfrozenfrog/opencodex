@@ -2,7 +2,7 @@
  * `ocx export --client <id>` — print a client config for the live proxy.
  *
  * The accepted clients span five formats. The accepted list is `EXPORT_CLIENT_IDS`, not
- * this comment: OpenCode, Pi, Prime, Aside, ZCode, omo and Kilo are JSON; OMP,
+ * this comment: OpenCode, Pi, Prime, Aside, ZCode, omo and Kilo are JSON;
  * Hermes, gjc, DSH, MiniMax Code and Raycast are YAML; OpenClaw is JSON5; Kimi
  * is TOML.
  *

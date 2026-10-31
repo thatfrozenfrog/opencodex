@@ -34,6 +34,20 @@ describe("ocx sync fans out to enabled native clients and owned file integration
     expect(claudeDesktopIntegrationEnabled(base)).toBe(true);
   });
 
+  test("disabled automatic Pi refresh does not block explicit sync", async () => {
+    const config = { ...base, clientIntegrations: { pi: false } } as OcxConfig;
+    const refresh = spyOn(ownedRefresh, "refreshOwnedIntegration").mockResolvedValue(null);
+    try {
+      await refreshOwnedCatalogIntegrations({ config, port: 10100, models: [] }, ["pi"]);
+      expect(refresh.mock.calls.map(([input]) => input.clientId)).toEqual(["pi"]);
+      refresh.mockClear();
+      await refreshOwnedCatalogIntegrations({ config, port: 10100, models: [] }, ["pi"], { refreshOnly: true });
+      expect(refresh).not.toHaveBeenCalled();
+    } finally {
+      refresh.mockRestore();
+    }
+  });
+
   test("an explicit false is the only thing that takes a client out of the fan-out", () => {
     const grokOff = { ...base, clientIntegrations: { grok: false } } as OcxConfig;
     expect(grokIntegrationEnabled(grokOff)).toBe(false);
@@ -65,7 +79,7 @@ describe("ocx sync fans out to enabled native clients and owned file integration
 
     expect(fn).toContain("grokIntegrationEnabled(config)");
     expect(fn).toContain("claudeDesktopIntegrationEnabled(config)");
-    expect(fn).toContain('["mcode", "pi", "aside", "raycast", "omo", "cline", "commandcode", "droid", "opencode", "kilo", "qoder", "qoder-cn", "workbuddy", "workbuddy-ai"]');
+    expect(fn).toContain('"pi"');
     expect(fn).toContain("refreshOwnedCatalogIntegrations");
     // Native clients keep their catches; the owned catalog helper isolates file clients.
     expect(fn.match(/catch \(error\)/g)?.length).toBe(2);

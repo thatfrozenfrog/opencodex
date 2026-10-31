@@ -10,7 +10,6 @@ import type { IneffectiveWriteReason } from "../integrations/target";
 export const FILE_INTEGRATION_CLIENTS = [
   "opencode",
   "pi",
-  "omp",
   "hermes",
   "openclaw",
   "kimi",

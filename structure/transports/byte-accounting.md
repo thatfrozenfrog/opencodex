@@ -44,11 +44,6 @@ avoiding a limit-one deadlock without bypassing upload rate limits or admitting 
 The existing final physical-send fence still guards inference. Caller cancellation and a 60-second
 upload deadline cover uploads and bounded response reads. Usage and client compaction stay truthful.
 
-The optional Advisor protocol guard follows the [Advisor retention contract](../advisor.md#optional-subsystem-boundary).
-Its raw leg, reconstruction and appended replay history use independent local counters, also
-charged to the request translator budget when supplied by delivery or empty-completion retry.
-These charges do not borrow the bridge's WeakMap event leases or the parser's call leases.
-
 Native Ollama late-output attribution uses `src/lib/json-byte-size.ts` to count the
 parts as one JSON string before constructing its caption. The exact count includes
 one pair of quotes, escaping, UTF-8 and surrogate pairs spanning parts, without a

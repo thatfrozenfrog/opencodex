@@ -61,11 +61,13 @@ export function onHostVisibilityChange(callback: () => void): () => void {
     notify();
   };
 
-  if (typeof document !== "undefined") document.addEventListener("visibilitychange", notify);
-  if (typeof window !== "undefined") window.addEventListener("opencodex:host-visibility", onHostEvent);
+  const observedDocument = typeof document !== "undefined" ? document : null;
+  const observedWindow = typeof window !== "undefined" ? window : null;
+  observedDocument?.addEventListener("visibilitychange", notify);
+  observedWindow?.addEventListener("opencodex:host-visibility", onHostEvent);
 
   return () => {
-    if (typeof document !== "undefined") document.removeEventListener("visibilitychange", notify);
-    if (typeof window !== "undefined") window.removeEventListener("opencodex:host-visibility", onHostEvent);
+    observedDocument?.removeEventListener("visibilitychange", notify);
+    observedWindow?.removeEventListener("opencodex:host-visibility", onHostEvent);
   };
 }

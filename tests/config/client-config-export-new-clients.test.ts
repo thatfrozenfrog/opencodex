@@ -60,11 +60,11 @@ describe("no secret reaches a client config", () => {
     // Pi, Kimi, Gajae, Aside and Raycast cannot emit the dedicated admission
     // header -- Aside's observed provider block has four keys and none is
     // `headers`; Raycast's `api_keys` is read literally with no env
-    // interpolation. OMP, Prime and omo can carry provider headers, but remote
+    // interpolation. Prime and omo can carry provider headers, but remote
     // credential wiring is deliberately deferred from those initial generated
     // integrations -- omo and Gentle Shell reuse Pi's builder, which emits no headers at all.
     const loopbackOnly = EXPORT_CLIENT_IDS.filter(id => EXPORT_CLIENTS[id].loopbackOnly);
-    expect(loopbackOnly).toEqual(["qoder", "qoder-cn", "workbuddy", "workbuddy-ai", "pi", "omp", "kimi", "gajae", "dsh", "mcode", "zcode", "commandcode", "prime", "aside", "raycast", "omo", "cline", "droid", "gentle-shell"]);
+    expect(loopbackOnly).toEqual(["qoder", "qoder-cn", "workbuddy", "workbuddy-ai", "pi", "kimi", "gajae", "dsh", "mcode", "zcode", "commandcode", "prime", "aside", "raycast", "omo", "cline", "droid", "gentle-shell"]);
   });
 
   test("every client that is not loopback-only carries the header on a remote bind", () => {
@@ -361,7 +361,7 @@ describe("gajae", () => {
 
 describe("contributions name every fragment we own", () => {
   test("single-entry clients own exactly one path", () => {
-    for (const id of ["pi", "omp", "hermes", "openclaw", "gajae", "dsh", "mcode", "zcode"] as const) {
+    for (const id of ["pi", "hermes", "openclaw", "gajae", "dsh", "mcode", "zcode"] as const) {
       expect(buildClientContribution(id, ctx()).fragments).toHaveLength(1);
     }
   });

@@ -8,25 +8,7 @@
 Use these declarations to choose a task, then check its flags and authority before execution.
 Non-mutating probes may still contact providers, consume quota or refresh caches.
 
-Declared capabilities: 67.
-
-### `ocx agent subagents force`
-
-Usage: `ocx agent subagents force <model|-> [--json]`
-
-Force Claude Code subagents onto one exposed model at the next routed launch; - clears.
-
-State-changing: yes. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| PUT | `/api/subagent-models` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--json` | boolean | Emit the saved force setting. |
-
-- Requires Claude Code 2.1.257+. Plain claude, forks, inherit skills, the main model and small-fast sidecars are unaffected.
+Declared capabilities: 59.
 
 ### `ocx agent request-user-input`
 
@@ -179,29 +161,6 @@ Drives no management route.
 - Requires daemon support for experimental thread/queue/add. Sender context comes from CODEX_THREAD_ID, not an authentication claim.
 - queued means submitted, not processed. unknown must not be replayed; no automatic retry, daemon start or thread resume.
 - Exit 0: queued; 1: not sent; 3: unknown; 64: invalid usage. No Claude transport, native lifecycle mutation or skill installation.
-
-### `ocx advisor`
-
-Inspect and configure the advisor sidecar (expert consultation for routed workers).
-
-State-changing: yes. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| GET | `/api/advisor/settings` |
-| GET | `/api/advisor/activity` |
-| PUT | `/api/advisor/settings` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--json` | boolean | Emit advisor settings as JSON. |
-
-- `status` (the default) reads the resolved settings; `on`/`off` toggle the sidecar; `consent` records or revokes context-sharing consent; `set` updates model, effort, policy, or timeout.
-- `on` does not grant consent. Without current consent it refuses and prints the disclosure. `on --ack-context-sharing` records consent v1 and enables. `consent --revoke` removes consent and stops task-context transfer.
-- The advisor model may be any routable model string: a bare native model, an explicit `provider/model`, or an account-qualified native model.
-- `policy: preflight` makes OpenCodex attempt one automatic consultation per task with a stable conversation identity once the task shows orientation evidence (an assistant tool call or a tool result after the latest user message). Without a stable identity, each eligible request may trigger another consultation. `policy: manual` consults only when the worker calls the synthetic `advisor` tool. Neither path sends task context without current context-sharing consent.
-- `policy: adaptive` adds evidence-based failed-repair consultation after the same validation fails, a file edit completes, and validation fails again. Automatic calls require a stable conversation identity. `set --max-consultations <1-3>` caps adaptive task attempts, including manual calls, in a durable 24-hour budget. No semantic stuck detection is claimed.
-- `activity` reads up to 100 recent consultation metadata records (trigger, status, models, requested and mapped effort, duration, reported tokens); no task or advice content is retained. Records are process-local and expire after 24 hours. Missing mapped effort means unreported, not successful application.
 
 ### `ocx message enable`
 
@@ -356,7 +315,7 @@ Drives no management route.
 
 Usage: `ocx agent status [--json]`
 
-Read agent mode, delegation, effort caps, roster, fallback and sidecars.
+Read agent mode, delegation, effort caps, and sidecars.
 
 State-changing: no. JSON mode: `envelope`.
 
@@ -365,8 +324,6 @@ State-changing: no. JSON mode: `envelope`.
 | GET | `/api/v2` |
 | GET | `/api/injection-model` |
 | GET | `/api/effort-caps` |
-| GET | `/api/subagent-models` |
-| GET | `/api/subagent-model-fallback` |
 | GET | `/api/sidecar-settings` |
 
 | Flag | Value | Meaning |
@@ -410,116 +367,6 @@ State-changing: yes. JSON mode: `payload`.
 | `--json` | boolean | Emit structured JSON. |
 
 - set requires at least one cap; a null clears it.
-
-### `ocx agent subagents`
-
-Usage: `ocx agent subagents status [--json]`
-
-Read, replace or clear the ordered featured subagent roster.
-
-State-changing: no. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| GET | `/api/subagent-models` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--json` | boolean | Emit structured JSON. |
-
-- At most five models; clear sends an empty roster. agent roster is an alias.
-
-### `ocx agent subagents set`
-
-Usage: `ocx agent subagents set <model,model...> [--json]`
-
-Read, replace or clear the ordered featured subagent roster.
-
-State-changing: yes. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| PUT | `/api/subagent-models` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--json` | boolean | Emit structured JSON. |
-
-- At most five models; clear sends an empty roster. agent roster is an alias.
-
-### `ocx agent subagents clear`
-
-Usage: `ocx agent subagents clear [--json]`
-
-Clear the saved subagents models.
-
-State-changing: yes. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| PUT | `/api/subagent-models` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--json` | boolean | Emit structured JSON. |
-
-- At most five models; clear sends an empty roster. agent roster is an alias.
-
-### `ocx agent fallback`
-
-Usage: `ocx agent fallback status [--json]`
-
-Read, replace or clear fallback models and polling interval.
-
-State-changing: no. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| GET | `/api/subagent-model-fallback` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--json` | boolean | Emit structured JSON. |
-
-- set requires models and/or --poll-ms; clear empties the models and may also set --poll-ms.
-
-### `ocx agent fallback set`
-
-Usage: `ocx agent fallback set [model,model...] [--poll-ms <5000-600000>] [--json]`
-
-Read, replace or clear fallback models and polling interval.
-
-State-changing: yes. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| PUT | `/api/subagent-model-fallback` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--poll-ms` | number | Polling interval, 5000-600000 milliseconds. |
-| `--json` | boolean | Emit structured JSON. |
-
-- set requires models and/or --poll-ms; clear empties the models and may also set --poll-ms.
-
-### `ocx agent fallback clear`
-
-Usage: `ocx agent fallback clear [--poll-ms <5000-600000>] [--json]`
-
-Clear the saved fallback models.
-
-State-changing: yes. JSON mode: `payload`.
-
-| Method | Route |
-|---|---|
-| PUT | `/api/subagent-model-fallback` |
-
-| Flag | Value | Meaning |
-|---|---|---|
-| `--poll-ms` | number | Polling interval, 5000-600000 milliseconds. |
-| `--json` | boolean | Emit structured JSON. |
-
-- set requires models and/or --poll-ms; clear empties the models and may also set --poll-ms.
 
 ### `ocx agent sidecar`
 

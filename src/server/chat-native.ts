@@ -1,7 +1,6 @@
 import { captureAccountAutoPauseAttempt, wasAccountAutoPaused } from "../oauth/account-auto-pause";
 import { createPhysicalSendReporter } from "../lib/request-execution-budget";
 import { createInferenceSendBudget } from "./inference/context";
-import { observeAdvisorNativeReasoning } from "./inference/advisor-diagnostics";
 import { buildOpenAIChatPassthroughRequest, createOpenAIChatAdapter } from "../adapters/openai-chat";
 import type { AdapterRequest, ProviderAdapter } from "../adapters/base";
 import { isNativeChatRouteEligible } from "./chat-native-eligibility";
@@ -378,7 +377,6 @@ export async function runNativeChatAttempt(
       undefined,
       translatorBudget,
     );
-    observeAdvisorNativeReasoning(req.headers, logCtx, request.body);
     return request;
   };
   try {

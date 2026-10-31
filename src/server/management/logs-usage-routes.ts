@@ -72,6 +72,7 @@ import { decodeRequestLogCursor, selectRequestLogPoll } from "../request-log-cur
 import { estimateComboCost, estimateRequestCost, normalizeCostTokens, tokensPerSecond } from "../../usage/cost";
 import { userCostOverlayVersion } from "../../usage/user-cost-overlays";
 import { ensureModelsDevPricing, modelsDevPricingVersion, searchModelsDevPrices } from "../../usage/models-dev-pricing";
+import { ensureCkeyPricing } from "../../usage/ckey-pricing";
 import type { PersistedUsageAttempt } from "../../usage/log";
 import { isAllowedRequestOrigin, jsonResponse, providerManagementConfigError, publicProviderBaseUrl, safeConfigDTO } from "../auth-cors";
 import { applySystemEnvToggle } from "../system-env";
@@ -266,7 +267,7 @@ export async function handleLogsUsageRoutes(ctx: ManagementContext): Promise<Res
     // Live models.dev pricing replaces the frozen bundled snapshot for rows it
     // publishes. A first visit waits for the catalog; later visits refresh a
     // stale cache in the background and keep serving it.
-    await ensureModelsDevPricing();
+    await Promise.all([ensureModelsDevPricing(), ensureCkeyPricing(config)]);
     const now = Date.now();
     try {
       const cacheKey = `${range}:${surface}`;

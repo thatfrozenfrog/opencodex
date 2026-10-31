@@ -19,13 +19,14 @@
  */
 import { describe, expect, test } from "bun:test";
 import { createOpenAIChatAdapter } from "../../src/adapters/openai-chat";
+import { createTranslatorBudget } from "../../src/lib/translator-budget";
 import type { OcxParsedRequest, OcxProviderConfig } from "../../src/types";
 import { repoPath } from "../helpers/repo-root";
 
 const INSTRUCTION = "Answer in exactly one sentence.";
 
 /** The role the Chat wire gives a mid-conversation developer message for one setting state. */
-function wireRole(declared: boolean | undefined): string {
+async function wireRole(declared: boolean | undefined): Promise<string> {
   const provider: OcxProviderConfig = {
     adapter: "openai-chat",
     baseUrl: "https://gateway.example.internal/v1",
@@ -45,17 +46,19 @@ function wireRole(declared: boolean | undefined): string {
     stream: false,
     options: {},
   } as unknown as OcxParsedRequest;
-  const body = JSON.parse(createOpenAIChatAdapter(provider).buildRequest(parsed).body) as {
-    messages: Array<{ role: string; content: unknown }>;
-  };
+  const budget = createTranslatorBudget();
+  const request = await createOpenAIChatAdapter(provider).buildRequest(parsed, { headers: new Headers(), translatorBudget: budget });
+  const body = JSON.parse(request.body) as { messages: Array<{ role: string; content: unknown }> };
+  request.releaseBodyObservation?.();
+  budget.dispose();
   const carried = body.messages.find(message => message.content === INSTRUCTION);
   expect(carried, "the instruction left the wire; this check has no role to read").toBeDefined();
   return String(carried!.role);
 }
 
-const UNSET = wireRole(undefined);
-const DECLARED_REJECTS = wireRole(true);
-const DECLARED_ACCEPTS = wireRole(false);
+const UNSET = await wireRole(undefined);
+const DECLARED_REJECTS = await wireRole(true);
+const DECLARED_ACCEPTS = await wireRole(false);
 
 /** The one sentence both English documents must carry, derived rather than transcribed. */
 const POLICY =
@@ -70,12 +73,6 @@ const POLICY =
 const STRUCTURE_DOC = "structure/providers/chat-compat.md";
 const ENGLISH_REFERENCE = "docs-site/src/content/docs/reference/configuration/providers.md";
 const ENGLISH_GUIDE = "docs-site/src/content/docs/guides/claude-code.md";
-const LOCALES = ["fr", "ja", "ko", "ru", "tr", "zh-cn", "zh-tw"] as const;
-
-const referencePage = (locale: string): string =>
-  "docs-site/src/content/docs/" + locale + "/reference/configuration/providers.md";
-const guidePage = (locale: string): string =>
-  "docs-site/src/content/docs/" + locale + "/guides/claude-code.md";
 
 async function read(path: string): Promise<string> {
   return await Bun.file(repoPath(path)).text();
@@ -132,21 +129,7 @@ describe("the documented developer-role policy is derived from the Chat wire", (
   });
 });
 
-describe("translated pages do not contradict the English source", () => {
-  test("the English pages carry roles worth comparing", async () => {
-    expect(roleSpans(await referenceRow(ENGLISH_REFERENCE)).length).toBeGreaterThan(0);
-    expect(roleSpans(await guideParagraph(ENGLISH_GUIDE)).length).toBeGreaterThan(0);
-  });
-
-  for (const locale of LOCALES) {
-    test(locale + " states the roles in the order the English reference does", async () => {
-      const english = roleSpans(await referenceRow(ENGLISH_REFERENCE));
-      expect(roleSpans(await referenceRow(referencePage(locale)))).toEqual(english);
-    });
-
-    test(locale + " Claude Code guide states the roles the English guide does", async () => {
-      const english = roleSpans(await guideParagraph(ENGLISH_GUIDE));
-      expect(roleSpans(await guideParagraph(guidePage(locale)))).toEqual(english);
-    });
-  }
+test("the English pages carry documented role names", async () => {
+  expect(roleSpans(await referenceRow(ENGLISH_REFERENCE)).length).toBeGreaterThan(0);
+  expect(roleSpans(await guideParagraph(ENGLISH_GUIDE)).length).toBeGreaterThan(0);
 });

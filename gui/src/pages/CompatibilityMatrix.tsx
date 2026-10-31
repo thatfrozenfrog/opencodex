@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconRefresh } from "../icons";
-import { useI18n, type TKey } from "../i18n/shared";
+import { useI18n, type Locale, type TKey } from "../i18n/shared";
 import { labSupplement, type LabSupplementKey } from "../i18n/lab-translations";
 import { EmptyState, Notice, Select } from "../ui";
 import { useDataSurface } from "../data-surface";
@@ -140,7 +140,7 @@ function VerdictCell({ rows, t, selectedKey, onSelect }: {
 function StatusCards({ data, t, locale }: {
   data: LabPageData;
   t: (key: TKey, vars?: Record<string, string | number>) => string;
-  locale: string;
+  locale: Locale;
 }) {
   const { status } = data;
   const cards: Array<{ label: string; value: string }> = [

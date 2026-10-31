@@ -23,8 +23,6 @@ Export-client marks (used by the API tab's connect rows, not the provider list):
   (formerly `badlogic/pi-mono`).
 - `opencode.svg` — part of the existing baseline above; the API tab reuses it as
   the OpenCode export-client mark.
-- `oh-my-pi.svg` — fetched 2026-08-31 from `https://omp.sh/favicon.svg`, the Oh My Pi
-  project's own favicon, unmodified. Oh My Pi is `can1357/oh-my-pi`.
 - `openclaw.svg` — fetched 2026-08-31 from
   `https://raw.githubusercontent.com/openclaw/openclaw/main/ui/public/favicon.svg`,
   the OpenClaw project's own favicon, unmodified. OpenClaw is `openclaw/openclaw`.

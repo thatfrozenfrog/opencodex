@@ -61,7 +61,7 @@ describe("companion hub: sync-managed and hardcoded clients agree", () => {
     expect(env.ANTHROPIC_BASE_URL).toBe(codexOrigin);
   });
 
-  test("the opencode/OMP exporter resolves to the same origin", () => {
+  test("the OpenCode exporter resolves to the same origin", () => {
     const config = hubConfig({ enabled: true });
     expect(opencodeProxyBaseUrl(HUB_PORT, config.hostname, config))
       .toBe(`${hardcodedLocalOrigin(HUB_PORT)}/v1`);

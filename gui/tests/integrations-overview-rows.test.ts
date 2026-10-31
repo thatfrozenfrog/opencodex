@@ -315,7 +315,6 @@ test("an unsettled file list renders unknown rows instead of dropping them", () 
   expect(rowById(built, "commandcode")).toMatchObject({ hash: "integrations/commandcode", labelKey: "integrations.tab.commandcode", state: "unknown" });
   expect(rowById(built, "kilo")).toMatchObject({ hash: "integrations/kilo", labelKey: "integrations.tab.kilo", state: "unknown" });
   expect(rowById(built, "droid")).toMatchObject({ hash: "integrations/droid", labelKey: "integrations.tab.droid", state: "unknown" });
-  expect(rowById(built, "omp").state).toBe("unknown");
   expect(rowById(built, "mcode").state).toBe("unknown");
   expect(rowById(built, "zcode").state).toBe("unknown");
   expect(rowById(built, "prime").state).toBe("unknown");
@@ -345,6 +344,5 @@ test("each row points at its own tab", () => {
   expect(rowById(rows, "claudeDesktop").hash).toBe("claude/desktop");
   expect(rowById(rows, "grok").hash).toBe("integrations/grok");
   expect(rowById(rows, "hermes").hash).toBe("integrations/hermes");
-  expect(rowById(rows, "omp").hash).toBe("integrations/omp");
   expect(rowById(rows, "dsh").hash).toBe("integrations/dsh");
 });

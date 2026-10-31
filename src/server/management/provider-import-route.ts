@@ -8,7 +8,6 @@ import { importCodexAccounts } from "../../codex/bulk-import";
 
 export async function handleProviderImportRoute(ctx: ManagementContext): Promise<Response> {
   const { req, config, convergeCodexCatalog } = ctx;
-
   let body: unknown;
   try {
     body = await readManagementJsonBody(req);

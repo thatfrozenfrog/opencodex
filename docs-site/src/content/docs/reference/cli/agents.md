@@ -7,15 +7,11 @@ These commands control agent policy and routing, inspect the live proxy, and con
 
 ## Agent policy
 
-### `ocx agent <status|injection|effort|subagents|fallback|roles|sidecar|memory-models|compaction-routing> ...`
+### `ocx agent <status|injection|effort|roles|sidecar|memory-models|compaction-routing> ...`
 
-Manage the headless multi-agent roster, effort caps, prompt injection, fallback, and sidecar settings.
+Manage the headless effort caps, prompt injection, and sidecar settings.
 Use `status` for the current policy. See [Sub-agent surfaces](/guides/sub-agent-surface/) for how
-surface modes, delegation, effort, and fallback behavior fit together.
-
-```bash
-ocx agent subagents set ark/model-a,openai/gpt-5.5
-```
+surface modes, delegation, and effort behavior fit together.
 
 `ocx agent roles` is for omo (Codex / LazyCodex). It lists each Codex agent role in
 `$CODEX_HOME/agents` with its model pin and whether `~/.omo/omo.jsonc` can be updated, or says
@@ -979,7 +975,7 @@ Manage and apply the Grok Build model fence.
 
 ## Client config export
 
-### `ocx export --client <opencode|pi|omp|hermes|openclaw|kimi|gajae|dsh|mcode|zcode|prime|aside|raycast|omo|cline|kilo|commandcode|droid>`
+### `ocx export --client <opencode|pi|hermes|openclaw|kimi|gajae|dsh|mcode|zcode|prime|aside|raycast|omo|cline|kilo|commandcode|droid>`
 
 Print a client config wired to the running proxy. The command serializes the
 `opencodex` provider block — base URL, model list, and the client's credential
@@ -995,7 +991,7 @@ See [client integrations](/guides/integrations/) for managed refresh and upgrade
 
 | Flag | Action |
 | --- | --- |
-| `--client <opencode\|pi\|omp\|hermes\|openclaw\|kimi\|gajae\|dsh\|mcode\|zcode\|prime\|aside\|raycast\|omo\|cline\|kilo\|commandcode\|droid>` | Required. Selects the client config dialect. |
+| `--client <opencode\|pi\|hermes\|openclaw\|kimi\|gajae\|dsh\|mcode\|zcode\|prime\|aside\|raycast\|omo\|cline\|kilo\|commandcode\|droid>` | Required. Selects the client config dialect. |
 | `--json` | Print the generated document as JSON on stdout for scripts. This is JSON even when the selected client's native format is YAML, TOML, or JSON5. |
 | `--out <path>` | Write the client's native config format to `<path>`. Refuses to replace an existing file. |
 | `--force` | Allow `--out` to replace an existing file. |
@@ -1003,7 +999,6 @@ See [client integrations](/guides/integrations/) for managed refresh and upgrade
 ```bash
 ocx export --client opencode                     # config plus destination, merge warning, and counts
 ocx export --client pi --json > pi-models.json   # JSON document for a pipe or a diff
-ocx export --client omp --out ./omp-models.yml    # native OMP YAML
 ocx export --client opencode --out ~/opencodex-opencode.json
 ```
 
@@ -1015,7 +1010,6 @@ client applies its own defaults for those).
 | --- | --- | --- | --- |
 | `opencode` | `~/.config/opencode/opencode.json` (`XDG_CONFIG_HOME` wins when set) | `opencode.json` | `OPENCODEX_OPENCODE_API_KEY` |
 | `pi` | `~/.pi/agent/models.json` (`PI_CODING_AGENT_DIR` wins when set; a relative value is refused) | `pi-models.json` | none — the block carries the literal `opencodex-loopback` |
-| `omp` | `~/.omp/agent/models.yml` (`OMP_PROFILE` wins over `PI_PROFILE`, even when empty; named profiles use the home-relative `PI_CONFIG_DIR` directory name and ignore `PI_CODING_AGENT_DIR`, while the default profile lets `PI_CODING_AGENT_DIR` win) | `omp-models.yaml` | none — loopback placeholder |
 | `hermes` | `~/.hermes/config.yaml` | `hermes-config.yaml` | `OPENCODEX_HERMES_API_KEY` |
 | `openclaw` | `~/.openclaw/openclaw.json` | `openclaw.json5` | `OPENCODEX_OPENCLAW_API_KEY` |
 | `kimi` | `~/.kimi-code/config.toml` | `kimi-config.toml` | none — loopback placeholder |
@@ -1038,12 +1032,9 @@ DSH 0.1.7 and newer import `settings.yaml` once into the first profile that boot
 it, so the dashboard integration writes the same provider into the `llm-pi-ai` row of the Desktop
 profile's `$DSH_HOME/profiles/desktop/cordis.patch.yml` once that profile exists.
 
-opencode interpolates `{env:OPENCODEX_OPENCODE_API_KEY}`. The generated Pi and OMP exports do
-not require an environment variable: each carries the literal `opencodex-loopback` placeholder.
-This is load-bearing because both clients resolve `apiKey` while building their model lists and
-hide the whole provider when an existing config contains an unset env reference. The proxy never
-checks the generated placeholder on loopback. OMP supports provider-level headers, but this initial
-integration deliberately remains loopback-only; remote `x-opencodex-api-key` wiring is deferred.
+opencode interpolates `{env:OPENCODEX_OPENCODE_API_KEY}`. The generated Pi export does
+not require an environment variable: it carries the literal `opencodex-loopback` placeholder.
+The proxy never checks the generated placeholder on loopback.
 
 The Raycast export is a standalone `providers.yaml` document with one `id: opencodex` element
 in the `providers` sequence: `name: OpenCodex`, the proxy's `/v1` base URL, and every routed model
@@ -1236,15 +1227,3 @@ Human `ocx logs` output includes `id=<request-id>`. Pass that value to `ocx logs
 ## Upstream error details
 
 When an upstream error envelope contains several message fields, OpenCodex uses the first nonblank string in its established priority order. Empty or malformed fields no longer hide a valid fallback diagnostic.
-
-### Forced Claude Code subagent model
-
-The Subagents page offers **Force all subagents onto one model**, off by default. Select an exposed roster-style id, such as `combo/tev-auto`, then enable the switch. The roster is offered first; unavailable saved roster entries cannot be force targets.
-
-`ocx agent subagents force combo/tev-auto` sets `claudeCode.subagentModelForce`; `ocx agent subagents force -` clears it. `ocx agent status` reports the setting. `GET /api/subagent-models` returns `force`, `forceAvailable`, and `forceStatus`; `PUT` accepts `{ "force": "combo/tev-auto" }` or `{ "force": null }` without changing the roster. Omitting `force` leaves it unchanged. Invalid or unexposed targets are rejected on write; stale targets are reported and skipped at launch.
-
-This takes effect on the **next routed `ocx claude` launch**, injecting `CLAUDE_CODE_SUBAGENT_MODEL` as an explicit proxy alias (with `[1m]` only for an authoritative million-token window; native Claude targets use a reversible native alias) and `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1`. Each nonempty shell-exported variable independently wins. Native launches inject neither variable; plain `claude` is not affected. No plugin files or `settings.json` are modified by this setting.
-
-Claude Code **2.1.257 or newer** is required for FORCE. Plugin and built-in agents (including Explore/Plan) and per-call model arguments are overridden. Forks and subagent skills with `model: inherit` keep the main conversation model. The main loop and Haiku/small-fast sidecars are unaffected. Existing roster files remain available.
-
-The dashboard warns about old or unknown CLI versions, unavailable targets, and either variable already present in `settings.json` → `env` (which overrides launch env). Detection is read-only and server-local: it cannot inspect another launch shell, another machine, or project-local settings. An unknown result is not proof of force support.

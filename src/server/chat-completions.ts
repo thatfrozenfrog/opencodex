@@ -21,7 +21,6 @@ import {
   responsesJsonToChatCompletion,
   responsesSseToChatCompletionsSse,
 } from "../chat/outbound";
-import { ADVISOR_INTERNAL_CAPABILITY_HEADER, isInternalCallCapability } from "../lib/local-internal-call-capability";
 import { classifyError, cyberPolicyErrorType, CYBER_POLICY_ERROR_CODE, isCyberPolicyCode, UNDECLARED_TOOL_CALL_ERROR_CODE } from "../lib/errors";
 import { redactSecretString } from "../lib/redact";
 import { resolveClientRetryAfter } from "../lib/retry-after";
@@ -57,7 +56,6 @@ import {
 } from "./request-log";
 import { createFinalRequestLog } from "./inference/final-log";
 import { clientWireLogOf, clientWireOf } from "./inference/client-wire";
-import { attachAdvisorReasoning } from "./inference/advisor-diagnostics";
 import { directEncodersApply } from "./inference/client-encoder-delivery";
 import { responseWithDeferredRequestLog } from "./relay";
 import { handleResponses } from "./responses";
@@ -124,7 +122,6 @@ export async function handleChatCompletions(
   const translatorBudget = createTranslatorBudget();
   try {
     let response = await handleChatCompletionsWithBudget(req, config, logCtx, translatorBudget, logIds);
-    if (isInternalCallCapability(req.headers.get(ADVISOR_INTERNAL_CAPABILITY_HEADER))) response = attachAdvisorReasoning(response, logCtx);
     return finalizeTranslatorBudgetResponse(
       response,
       translatorBudget,
@@ -419,17 +416,6 @@ async function handleChatCompletionsWithBudget(
   }
 
   const visionDescribeTerminal = req.headers.get("x-opencodex-vision-describe") === "1";
-  // Terminal advisor marker: the advisor sidecar's own loopback consultation re-enters through
-  // this surface. The bridge rebuilds headers from the FORWARD_HEADERS allowlist, which would
-  // drop the raw marker header — so the fact is detected here and carried as an option flag
-  // (same structure as the vision-describe fence above, depth cap 1).
-  //
-  // The header value is NOT evidence by itself: any external caller can send it, and the peer
-  // address proves nothing (Docker/WSL/tunnels/port-forwarding end on loopback). Internal
-  // authority comes from a process-owned capability minted at random per process and compared in
-  // constant time, so a forged header — or a token captured from an older process — is treated
-  // as an ordinary external request.
-  const advisorInternal = isInternalCallCapability(req.headers.get(ADVISOR_INTERNAL_CAPABILITY_HEADER));
   // Concrete helper targets must fail before optional stored-main credential enrichment.
   // Unresolved combos are checked after their concrete child route is selected in Responses.
   if (settledRoute && !settledRoute.combo && isCanonicalOpenAiForwardProvider(settledRoute.provider)
@@ -538,7 +524,6 @@ async function handleChatCompletionsWithBudget(
     // headers from the FORWARD_HEADERS allowlist, which would drop the raw
     // header — so the fact is detected here and carried as an option flag.
     ...(visionDescribeTerminal ? { visionDescribeTerminal: true } : {}),
-    ...(advisorInternal ? { advisorInternal: true } : {}),
     translatorBudget,
     ...(logIds ? { onFirstOutput: () => recordFirstOutput(logCtx, logIds.start) } : {}),
     onNativePassthroughTerminal: status => finalizeNativeLog(httpStatusForRequestLogTerminal(status, logCtx), { terminalStatus: status, closeReason: "terminal" }),

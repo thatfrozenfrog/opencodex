@@ -309,7 +309,7 @@ A current-turn explicit empty catalog restricts client output on managed native 
 translated adapter and run-turn delivery, direct client encoders, and final hosted-search, image
 or video output. Calls outside current-turn declarations become `undeclared_tool_call` before
 client delivery or continuation state, without a successful terminal after refusal. Other current
-declarations remain usable; internal hosted-search, vision, image and advisor work stays unchanged.
+declarations remain usable; internal hosted-search, vision and image work stays unchanged.
 Native Messages includes inline system-message definitions, honors permanent removals and re-offered
 known definitions, and compares restored OAuth names. Hosted `server_tool_use` and `mcp_tool_use`
 input deltas are tracked separately from client-executed `tool_use` blocks.

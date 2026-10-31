@@ -51,7 +51,6 @@ import {
   transientRetryOn5xxPolicySchema,
   runtimeRoleSchema,
   spendSchema,
-  chatgptDesktopConfigIssue,
 } from "./schema/leaf-validators";
 import { hasWarnedInheritedFastWireConflict, markWarnedInheritedFastWireConflict } from "./warn-memo";
 
@@ -145,8 +144,6 @@ export function warnDegradedTopLevelOptIns(rawParsed: unknown, validated: OcxCon
   if (blockedModelRedirectsError(rawParsed)) console.warn("⚠️  invalid blockedModelRedirects ignored; provider routing remains available");
   if (mainAccountHardLockFallbackError(rawParsed)) console.warn("⚠️  invalid codexMainAccountHardLockFallback ignored; the main-account hard lock still refuses while blocked");
   if (fallbackPolicyError(rawParsed)) console.warn("⚠️  invalid fallback leaves ignored; those scopes keep today's fallback behavior");
-  const chatgptDesktop = chatgptDesktopConfigIssue(rawParsed);
-  if (chatgptDesktop) console.warn(`⚠️  config.json ${chatgptDesktop} — the whole chatgptDesktop block is ignored, so the ChatGPT desktop integration reads as off`);
   warnDegradedStreamMode(rawParsed, validated);
   warnDegradedCompactionRouting(rawParsed, validated);
   warnDegradedMemoryModels(rawParsed, validated);

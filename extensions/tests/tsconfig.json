@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "module": "ESNext", "moduleResolution": "bundler",
+    "strict": true, "noEmit": true, "skipLibCheck": true, "allowImportingTsExtensions": true,
+    "paths": { "@earendil-works/*": ["/home/kiwi/.pi/agent/install/releases/1.4.0/node_modules/@earendil-works/*"] },
+    "typeRoots": ["/home/kiwi/Projects/AIRouter/opencodex/node_modules/@types"]
+  },
+  "files": ["../pi-ocx.ts", "../ocx-usage-dashboard/index.ts"]
+}

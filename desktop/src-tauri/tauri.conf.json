@@ -33,9 +33,6 @@
     "macOS": {
       "minimumSystemVersion": "13.0",
       "entitlements": "Entitlements.plist",
-      "files": {
-        "PlugIns/OpenCodexWidget.appex": "widget/OpenCodexWidget.appex"
-      },
       "dmg": {
         "appPosition": {
           "x": 180,

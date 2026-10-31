@@ -75,8 +75,6 @@ import {
   remoteGuiConfigSchema,
   runtimeRoleSchema,
   spendSchema,
-  chatgptDesktopSchema,
-  chatgptDesktopConfigIssue,
   compactionRoutingSchema,
   reasoningRetentionSchema,
   skillsConfigSchema,
@@ -135,11 +133,6 @@ function validFileConfigDiagnostics(config: OcxConfig, rawParsed: unknown): Conf
   const normalized = normalizeClaudeSubagentEffort(normalizeNativeSubagentSync(config, rawParsed), rawParsed);
   const warnings = configPlaceholderWarnings(normalized);
   if (rawForce !== undefined && !isSubagentModelEntry(rawForce)) warnings.push("claudeCode.subagentModelForce ignored: expected a safe roster-style model id");
-  if (normalized.chatgptDesktop?.appServerShim === true && process.platform !== "darwin") {
-    warnings.push("chatgptDesktop.appServerShim is experimental and macOS only; ignored on this platform");
-  }
-  const chatgptDesktopIssue = chatgptDesktopConfigIssue(rawParsed);
-  if (chatgptDesktopIssue) warnings.push(`${chatgptDesktopIssue}; the whole chatgptDesktop block is ignored, so the ChatGPT desktop integration reads as off`);
   warnings.push(...inheritedFastWireConflictProviderNames(normalized).map(inheritedFastWireConflictWarning));
   warnings.push(...degradedCodexAccountPriorityWarnings(rawParsed, normalized));
   warnings.push(...degradedListenerWarnings(rawParsed, normalized));
@@ -708,10 +701,6 @@ function skillsConfigError(value: unknown): string | null {
 }
 
 export function validateConfigCandidate(value: unknown): { ok: true; config: OcxConfig } | { ok: false; error: string } {
-  const chatgptDesktop = rawConfigRecord(value)?.chatgptDesktop;
-  if (chatgptDesktop !== undefined && !chatgptDesktopSchema.safeParse(chatgptDesktop).success) {
-    return { ok: false, error: "schema_invalid: chatgptDesktop: requires an optional boolean appServerShim and no other fields" };
-  }
   const compactionRouting = rawConfigRecord(value)?.compactionRouting;
   const reasoningRetention = rawConfigRecord(value)?.reasoningRetention;
   if (reasoningRetention !== undefined && !reasoningRetentionSchema.safeParse(reasoningRetention).success) {
@@ -819,8 +808,6 @@ export function configDiagnosticsFromRaw(raw: string): ConfigDiagnostics {
     if (salvaged) {
       const config = normalizeApiKeyIds(salvaged.parsed);
       const warnings = degradedListenerWarnings(parsed, config);
-      const chatgptDesktopIssue = chatgptDesktopConfigIssue(parsed);
-      if (chatgptDesktopIssue) warnings.push(`${chatgptDesktopIssue}; the whole chatgptDesktop block is ignored, so the ChatGPT desktop integration reads as off`);
       return {
         config,
         source: "fallback",

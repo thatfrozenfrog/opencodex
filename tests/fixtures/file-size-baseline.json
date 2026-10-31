@@ -1,17 +1,7 @@
 {
   "exempt": [
     "docs-site/src/data/frontier-benchmarks.json",
-    "gui/src/i18n/de.ts",
     "gui/src/i18n/en.ts",
-    "gui/src/i18n/fr.ts",
-    "gui/src/i18n/ja.ts",
-    "gui/src/i18n/ko.ts",
-    "gui/src/i18n/pt.ts",
-    "gui/src/i18n/ru.ts",
-    "gui/src/i18n/tr.ts",
-    "gui/src/i18n/vi.ts",
-    "gui/src/i18n/zh-TW.ts",
-    "gui/src/i18n/zh.ts",
     "scripts/model-metadata.source.json",
     "src/adapters/cursor/gen/agent_pb.ts"
   ],
@@ -54,7 +44,6 @@
     "tests/responses/responses-state.test.ts": 3982,
     "tests/responses/responses-undeclared-tool-guard.test.ts": 2371,
     "tests/responses/ws-upstream.test.ts": 2002,
-    "tests/routing/subagent-fallback-handle-responses.test.ts": 2274,
     "tests/server/config.test.ts": 3692,
     "tests/server/management-provider-validation.test.ts": 5469,
     "tests/server/server-auth.test.ts": 4435,

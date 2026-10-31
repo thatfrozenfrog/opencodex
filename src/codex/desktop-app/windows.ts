@@ -13,7 +13,6 @@
 import { execFileSync } from "node:child_process";
 import { sep, win32 } from "node:path";
 import { resolveTrustedWindowsPowerShellExe, resolveTrustedWindowsTaskkillExe } from "../../lib/windows-elevation";
-import { activateWindowsCodexCompatibility, assertWindowsCompatibilityContext, captureWindowsCompatibilityContext } from "../desktop-compatibility/windows-package-command";
 import {
   isUnderRoot,
   type DesktopAppAdapter,
@@ -225,16 +224,11 @@ export const windowsDesktopAppAdapter: DesktopAppAdapter = {
     exec(resolveTrustedWindowsTaskkillExe(), ["/PID", String(root.pid), "/T", "/F"], POWERSHELL_PROBE_OPTIONS);
   },
 
-  captureRelaunchContext(_exec, _install, processes): Record<string, string> {
-    return captureWindowsCompatibilityContext(processes);
+  captureRelaunchContext(_exec, _install, _processes): Record<string, string> {
+    return {};
   },
 
-  relaunch(exec, install, context): void {
-    if (context.codexCompatibilityPacUrl) {
-      assertWindowsCompatibilityContext(context);
-      activateWindowsCodexCompatibility(exec, install, context.codexCompatibilityPacUrl);
-      return;
-    }
+  relaunch(exec, install, _context): void {
     // Throws on failure so the ladder reports relaunch_failed. The old code
     // returned targets_survived here, which was dishonest: everything HAD died
     // and it was the relaunch that failed.

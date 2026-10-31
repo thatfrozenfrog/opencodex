@@ -107,21 +107,14 @@ test("ApiKeys workspace keeps endpoint, generate, models, and usage panels", asy
 });
 
 test("every locale has exactly the English api namespace", () => {
-  // The previous version of this test named eight literals out of a surface
-  // that had seventy-four. It passed while five locales were missing the same
-  // key. Compare the loaded dictionaries instead: this catches missing AND
-  // extra keys, in all six files, without searching source text.
-  const locales: Locale[] = ["en", "de", "fr", "ja", "ko", "ru", "zh", "zh-TW"];
+  const locales: Locale[] = ["en"];
   const englishApiKeys = Object.keys(DICTS.en).filter(key => key.startsWith("api.")).sort();
 
-  // Activation guard: swapping the extraction back to a curated subset fails.
   expect(englishApiKeys.length).toBeGreaterThan(8);
   for (const locale of locales) {
     const localeApiKeys = Object.keys(DICTS[locale]).filter(key => key.startsWith("api.")).sort();
     expect(localeApiKeys).toEqual(englishApiKeys);
   }
-  // Present in every dictionary, rendered nowhere. Deleted deliberately, so
-  // the absence is asserted rather than merely happening to be true.
   expect(englishApiKeys).not.toContain("api.workspace.selectKeyHint");
 });
 

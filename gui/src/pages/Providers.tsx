@@ -655,6 +655,7 @@ export default function Providers({ apiBase }: { apiBase: string }) {
             preset={matchingWorkspacePreset(item, presetResource.data ?? [])}
             usageTotals={data.usageTotals}
             modelUsage={data.modelUsage}
+            onPriceSaved={data.onPriceSaved}
             quotaReport={data.quotaReport}
             availableModels={data.availableModels}
             hasLiveModels={data.hasLiveModels}

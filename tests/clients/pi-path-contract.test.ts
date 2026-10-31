@@ -5,7 +5,6 @@ import { join } from "node:path";
 import {
   ClientPathError,
   EXPORT_CLIENTS,
-  ompModelsConfigPath,
   piAgentDir,
   piConfigPath,
 } from "../../src/clients/config-export";
@@ -46,11 +45,7 @@ describe("Pi path contract", () => {
     });
   });
 
-  /**
-   * The defect this file exists for: every other client threaded `env` into its
-   * destination, and `pi` alone dropped it, so the same variable moved OMP's
-   * path and left Pi's on the home default.
-   */
+  /** The destination, config path, and install signal use the same Pi override. */
   test("the export destination and the integration resolvers all follow the override", () => {
     withTempHome(home => {
       const env = { PI_CODING_AGENT_DIR: join(home, "elsewhere") } as NodeJS.ProcessEnv;
@@ -63,12 +58,4 @@ describe("Pi path contract", () => {
     });
   });
 
-  test("Pi and OMP now agree about the variable they already shared", () => {
-    withTempHome(home => {
-      const env = { PI_CODING_AGENT_DIR: join(home, "elsewhere") } as NodeJS.ProcessEnv;
-      // OMP's default profile has always honored it; Pi now does too.
-      expect(ompModelsConfigPath(env, home)).toBe(join(home, "elsewhere", "models.yml"));
-      expect(piConfigPath(env, home)).toBe(join(home, "elsewhere", "models.json"));
-    });
-  });
 });

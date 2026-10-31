@@ -55,7 +55,7 @@ import {
   patchYamlFragmentSource,
   sourcePrunableYamlContainers,
   yamlFragmentUnsupportedStyle,
-} from "./omp-yaml-source";
+} from "./yaml-fragment-source";
 
 /**
  * "comments or formatting" used to be the only refusal this path could report.

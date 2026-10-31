@@ -12,7 +12,6 @@ import { createNativeIdentityReader } from "./native-identity";
 import { UsageRelayController, type UsageIdentity } from "./usage-controller";
 import { createUsageControlledFetch } from "./usage-controlled-fetch";
 import { startDesktopRelay } from "./relay-listener";
-import { launchWindowsCodexCompatibility } from "./windows-package-launch";
 import { acquireDesktopCompatibilityRuntime, bindDesktopCompatibilityLaunch } from "./runtime-ownership";
 import { createDesktopConnectionStore, type DesktopConnectionStore } from "./connection-store";
 import { createNativeRoutingVerifier } from "./routing-preflight";
@@ -193,11 +192,7 @@ export function createDesktopCompatibilityRuntime(io: DesktopRuntimeIo = {}) {
   return { status, start, stop, apply,
     async observe() { if (owned) await owned.controller.observeOnly(); return status(); },
     async launch() {
-      if (!owned || phase !== "running") throw new Error("desktop_compatibility_not_running");
-      const current = owned;
-      if (!await contextValid()) throw new Error(`desktop_compatibility_${contextFailure}`);
-      if (owned !== current || phase !== "running") throw new Error("desktop_compatibility_not_running");
-      return launchWindowsCodexCompatibility(current.pacUrl);
+      throw new Error("desktop_compatibility_launch_unavailable");
     },
     /** Internal native launch context; management status never returns the control endpoint. */
     getPacUrl: () => owned?.pacUrl ?? null,

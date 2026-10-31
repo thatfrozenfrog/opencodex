@@ -2,29 +2,16 @@ import { describe, expect, test } from "bun:test";
 import { formatUptime } from "../../gui/src/formatUptime";
 
 describe("dashboard uptime formatting", () => {
-  test("keeps short uptimes in seconds", () => {
-    expect(formatUptime(0, "ko")).toBe("0초");
-    expect(formatUptime(299.9, "ko")).toBe("299초");
+  test("uses seconds below five minutes", () => {
+    expect(formatUptime(0, "en")).toBe("0s");
+    expect(formatUptime(299.9, "en")).toBe("299s");
   });
-
-  test("uses minutes after five minutes", () => {
-    expect(formatUptime(300, "ko")).toBe("5분");
-    expect(formatUptime(3599, "ko")).toBe("59분");
-  });
-
-  test("uses hours and minutes after one hour", () => {
-    expect(formatUptime(3600, "ko")).toBe("1시간");
-    expect(formatUptime(64685, "ko")).toBe("17시간 58분");
-  });
-
-  test("uses days and hours after one day", () => {
-    expect(formatUptime(86400, "ko")).toBe("1일");
-    expect(formatUptime(183600, "ko")).toBe("2일 3시간");
-  });
-
-  test("uses compact localized units", () => {
-    expect(formatUptime(3720, "en")).toBe("1h 2m");
-    expect(formatUptime(93600, "zh")).toBe("1天 2小时");
-    expect(formatUptime(93600, "zh-TW")).toBe("1天 2小時");
+  test("uses minutes, hours and days at their thresholds", () => {
+    expect(formatUptime(300, "en")).toBe("5m");
+    expect(formatUptime(3599, "en")).toBe("59m");
+    expect(formatUptime(3600, "en")).toBe("1h");
+    expect(formatUptime(64685, "en")).toBe("17h 58m");
+    expect(formatUptime(86400, "en")).toBe("1d");
+    expect(formatUptime(183600, "en")).toBe("2d 3h");
   });
 });

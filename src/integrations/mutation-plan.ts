@@ -138,7 +138,6 @@ const CLIENT_MANAGED_PATHS = {
   opencode: [["provider", OPENCODE_PROVIDER_ID], ["providers", OPENCODE_PROVIDER_ID]],
   pi: [["providers", OPENCODE_PROVIDER_ID]],
   "gentle-shell": [["providers", OPENCODE_PROVIDER_ID]],
-  omp: [["providers", OPENCODE_PROVIDER_ID]],
   hermes: [["providers", OPENCODE_PROVIDER_ID]],
   openclaw: [["models", "providers", OPENCODE_PROVIDER_ID]],
   kimi: [["providers", OPENCODE_PROVIDER_ID], ["models", DYNAMIC_SEGMENT]],

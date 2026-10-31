@@ -40,15 +40,6 @@ Captured command lines stay internal, outside restart results and diagnostic log
 Capture failures return `relaunch_context_failed` and release the restart lock before any process is signalled; the CLI reports that the app was not stopped.
 An explicitly empty or whitespace-only root command line remains unknown after CIM parsing and refuses context capture; an unreadable helper cannot erase a known root PAC.
 
-`src/codex/desktop-compatibility/windows-package-command.ts` validates the canonical
-loopback URL shape, rechecks the discovered package manifest, activates with
-`IApplicationActivationManager`, and verifies the package identity and actual PAC
-argument. Normal launches keep the existing AppsFolder route. A standalone compatibility
-launch refuses an already running app; it never quits an app or installs a watcher.
-Activation reads the final non-empty JSON line after trimming a BOM or preceding warnings. Invalid output and executor failures remain unverified, without automatic relaunch retries.
-`tests/clients/desktop-compatibility-launch.test.ts` covers restart integration and the
-real Windows parser/COM service without launching the user's app.
-
 ## Certificate persistence
 
 `src/codex/desktop-compatibility/certificate-store.ts` is a separately callable store

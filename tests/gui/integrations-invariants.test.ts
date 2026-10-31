@@ -99,7 +99,7 @@ describe("the client registries cannot drift apart", () => {
     const guiRouting = await import("../../gui/src/app-routing");
 
     const expected = [...EXPORT_CLIENT_IDS].sort();
-    expect(expected).toHaveLength(23);
+    expect(expected).toHaveLength(22);
 
     expect([...INTEGRATION_CLIENT_IDS].sort()).toEqual(expected);
     expect([...gui.CLIENTS].sort()).toEqual(expected);
@@ -204,7 +204,6 @@ describe("the client registries cannot drift apart", () => {
   });
 
   test("source preservation and cross-process locking are registry capabilities", () => {
-    expect(INTEGRATION_CLIENTS.omp.sourcePreservingYaml?.path).toEqual(["providers", "opencodex"]);
     expect(INTEGRATION_CLIENTS.hermes.sourcePreservingYaml?.path).toEqual(["providers", "opencodex"]);
     expect(INTEGRATION_CLIENTS.dsh.sourcePreservingYaml?.path).toEqual([
       "llm-pi-ai", "providers", "opencodex",
@@ -261,7 +260,6 @@ describe("every client survives a full lifecycle", () => {
     droid: '{"theme":"dark","customModels":[{"model":"local","displayName":"Local","baseUrl":"http://127.0.0.1:11434/v1","provider":"generic-chat-completion-api"}]}\n',
     opencode: '{\n  "provider": {\n    "mine": { "npm": "keep-me" }\n  }\n}\n',
     pi: '{\n  "providers": {\n    "mine": { "api": "http://keep-me" }\n  }\n}\n',
-    omp: "providers:\n  mine:\n    api: http://keep-me\n",
     hermes: "providers:\n  mine:\n    api: http://keep-me\n",
     openclaw: '{\n  models: {\n    providers: {\n      mine: { api: "http://keep-me" },\n    },\n  },\n}\n',
     kimi: '[providers.mine]\napi = "http://keep-me"\n',

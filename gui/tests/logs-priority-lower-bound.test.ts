@@ -12,7 +12,6 @@ function translator(locale: keyof typeof DICTS): TFn {
 }
 
 const en = translator("en");
-const de = translator("de");
 
 describe("Logs priority lower-bound formatting", () => {
   test("prefixes confirmed unpriced priority estimates with the lower-bound marker", () => {
@@ -21,11 +20,6 @@ describe("Logs priority lower-bound formatting", () => {
 
   test("renders ordinary standard-price estimates as a bare dollar amount", () => {
     expect(formatEstimatedUsdValue(1.6, en, "en-US", false)).toBe("$1.6000");
-  });
-
-  test("keeps the fixed dollar shape under a non-English locale", () => {
-    expect(formatEstimatedUsdValue(1.6, de, "de-DE", false)).toBe("$1.6000");
-    expect(formatEstimatedUsdValue(1.6, de, "de-DE", true)).toBe("≥$1.6000");
   });
 });
 

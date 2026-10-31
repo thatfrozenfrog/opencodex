@@ -78,6 +78,10 @@ automatic pricing). `tests/usage/usage-models-dev-pricing.test.ts` covers refres
 cache reload, aliases, ranking, precedence and memo invalidation;
 `tests/server/api-usage.test.ts` covers the candidate endpoint.
 
+## Ckey pricing
+
+For canonical Ckey endpoints, usage summaries fetch the authenticated Ckey model catalog over a fixed origin with redirects refused. The process-local catalog is refreshed every five minutes and cleared on credential changes. Ckey rates take precedence over public vendor prices but follow explicit user overrides. Token and cache prices are converted from VND at 25,000 VND per USD; each measured attempt also includes its per-request charge and minimum charge. Missing or invalid Ckey prices remain unpriced rather than using an unrelated vendor rate.
+
 ## Dialog and estimates
 
 `gui/src/components/ModelPriceDialog.tsx` edits base rates plus Automatic, Flat rate or Custom

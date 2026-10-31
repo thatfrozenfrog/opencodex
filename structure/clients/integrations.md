@@ -227,7 +227,7 @@ is available; otherwise the operator refreshes the integration or client catalog
 
 ## Model output limits
 
-OpenCode, Kilo, Pi-family clients, OMP and Gajae export the explicit model `maxTokens` when valid (a catalog
+OpenCode, Kilo, Pi-family clients and Gajae export the explicit model `maxTokens` when valid (a catalog
 row's `maxOutputTokens`, carried by `toExportModel` in `src/server/management/model-rows.ts` and by
 `opencodeCatalogFromProxyRows` in `src/cli/opencode.ts`), otherwise the generated metadata limit for the provider and model ID (including provider aliases).
 Only unknown limits fall back to 32000. Every output limit is clamped to the authoritative
@@ -264,7 +264,7 @@ All registered integrations consume the shared catalog, including [Anthropic see
 | --- | --- |
 | OpenCode V1, Kilo | `attachment`, `modalities.input` |
 | OpenCode V2 | native `capabilities.input`, `capabilities.output`, and known `capabilities.tools` |
-| Pi, OMP, Prime, Aside, omo, Gajae, DSH | `input` (text/image only) |
+| Pi, Prime, Aside, omo, Gajae, DSH | `input` (text/image only) |
 | ZCode | `modalities.input` (text/image only) |
 | Cline | `modalities.input`, `supportsVision` |
 | Hermes | `supports_vision` (see below) |
@@ -593,8 +593,3 @@ present at validation is refused, and one exchanged into place during a mutation
 than redirecting OpenCodex's write outside Cline's settings directory.
 
 Routed `ocx claude` launches apply opt-in `claudeCode.subagentModelForce` via independent user-wins defaults for `CLAUDE_CODE_SUBAGENT_MODEL` and `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`. Native launches add neither; plain Claude and persistent settings remain unchanged. Claude Code 2.1.257+ implements force, excluding forks and inherit-model skills; main and small-fast models remain separate.
-
-## OMP model usage projection
-Oh My Pi (`omp`) reads proxy models through `models.yml` under its agent home. Quota usage is projected per active model ID and matched to native status-line windows (5h, daily, 7d, monthly) while preserving proxy-local authentication boundaries.
-
-> Decision record: [ADR-7281](../decisions/ADR-7281-omp-model-usage.md)

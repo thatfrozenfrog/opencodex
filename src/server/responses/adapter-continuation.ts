@@ -763,14 +763,7 @@ export function createAdapterContinuations(
           continuation: next => fetchTerminalGuardContinuation(next, undefined, !parsed.stream),
         })
       : retryEvents;
-    return parsed._advisorGuard
-      ? parsed._advisorGuard({
-          parsed,
-          translatorBudget,
-          firstEvents: terminalGuardedRetry,
-          continuation: fetchTerminalGuardContinuation,
-        })
-      : terminalGuardedRetry;
+    return terminalGuardedRetry;
   };
 
   return {

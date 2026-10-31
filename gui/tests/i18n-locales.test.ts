@@ -3,7 +3,6 @@ import {
   DICTS,
   LOCALES,
   localeDisplayName,
-  detectInitial,
 } from "../src/i18n/shared";
 import { en } from "../src/i18n/en";
 import { formatUptime } from "../src/formatUptime";
@@ -22,23 +21,13 @@ describe("i18n locale contracts", () => {
     }
   });
 
-  test("Vietnamese locale is registered", () => {
-    expect(LOCALES.some(locale => locale.code === "vi")).toBe(true);
-    expect(DICTS.vi["lang.nativeName"]).toBe("Tiếng Việt");
+  test("English is the only dashboard locale", () => {
+    expect(LOCALES).toEqual([{ code: "en", htmlLang: "en" }]);
+    expect(Object.keys(DICTS)).toEqual(["en"]);
   });
 
-  test("Brazilian Portuguese locale is registered", () => {
-    expect(LOCALES.find(locale => locale.code === "pt")?.htmlLang).toBe("pt-BR");
-    expect(DICTS.pt["lang.nativeName"]).toBe("Português");
-  });
-
-  test("every locale has a catalog-backed display name", () => {
-    for (const { code } of LOCALES) {
-      const displayName = DICTS[code]["lang.nativeName"];
-
-      expect(displayName.trim().length).toBeGreaterThan(0);
-      expect(localeDisplayName(code)).toBe(displayName);
-    }
+  test("English catalog is the sole catalog source", () => {
+    expect(localeDisplayName("en")).toBe("English");
   });
 
   test("every locale catalog has exactly the English key set", () => {
@@ -50,13 +39,11 @@ describe("i18n locale contracts", () => {
     }
   });
 
-  test("every locale preserves interpolation placeholders exactly", () => {
+  test("English catalog preserves interpolation placeholders", () => {
     const placeholderRe = /\{([a-zA-Z0-9_]+)\}/g;
     const mismatches: string[] = [];
 
     for (const { code } of LOCALES) {
-      if (code === "en") continue;
-
       for (const key of Object.keys(en) as Array<keyof typeof en>) {
         const enValue = en[key];
         const localeValue = DICTS[code][key];
@@ -138,144 +125,10 @@ describe("i18n locale contracts", () => {
     }
   });
 
-  test("detectInitial recognizes every supported navigator locale", () => {
-    const originalNavigator = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "navigator",
-    );
-    const originalStorage = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "localStorage",
-    );
-
-    try {
-      Object.defineProperty(globalThis, "localStorage", {
-        value: {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        },
-        configurable: true,
-        writable: true,
-      });
-
-      for (const { code, htmlLang } of LOCALES) {
-        Object.defineProperty(globalThis, "navigator", {
-          value: { language: htmlLang },
-          configurable: true,
-          writable: true,
-        });
-
-        expect(detectInitial()).toBe(code);
-      }
-    } finally {
-      if (originalNavigator) {
-        Object.defineProperty(globalThis, "navigator", originalNavigator);
-      } else {
-        Reflect.deleteProperty(globalThis, "navigator");
-      }
-
-      if (originalStorage) {
-        Object.defineProperty(globalThis, "localStorage", originalStorage);
-      } else {
-        Reflect.deleteProperty(globalThis, "localStorage");
-      }
-    }
+  test("English catalog source exists", async () => {
+    const text = await Bun.file(new URL("../src/i18n/en.ts", import.meta.url)).text();
+    expect(text).toContain('"lang.nativeName": "English"');
   });
 
-  test("detectInitial maps French regional navigator locales to French", () => {
-    const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
-    const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 
-    try {
-      Object.defineProperty(globalThis, "localStorage", {
-        value: { getItem: () => null },
-        configurable: true,
-      });
-
-      for (const language of ["fr", "fr-FR", "fr-CA", "fr-BE", "fr-CH"]) {
-        Object.defineProperty(globalThis, "navigator", {
-          value: { language },
-          configurable: true,
-        });
-        expect(detectInitial()).toBe("fr");
-      }
-    } finally {
-      if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
-      else Reflect.deleteProperty(globalThis, "navigator");
-      if (originalStorage) Object.defineProperty(globalThis, "localStorage", originalStorage);
-      else Reflect.deleteProperty(globalThis, "localStorage");
-    }
-  });
-
-  test("detectInitial recognizes every supported stored locale", () => {
-    const originalStorage = Object.getOwnPropertyDescriptor(
-      globalThis,
-      "localStorage",
-    );
-
-    let storedLocale: string | null = null;
-
-    try {
-      Object.defineProperty(globalThis, "localStorage", {
-        value: {
-          getItem: (key: string) =>
-            key === "ocx-lang" ? storedLocale : null,
-          setItem: (_key: string, value: string) => {
-            storedLocale = value;
-          },
-          removeItem: () => {
-            storedLocale = null;
-          },
-        },
-        configurable: true,
-        writable: true,
-      });
-
-      for (const { code } of LOCALES) {
-        storedLocale = code;
-        expect(detectInitial()).toBe(code);
-      }
-    } finally {
-      if (originalStorage) {
-        Object.defineProperty(globalThis, "localStorage", originalStorage);
-      } else {
-        Reflect.deleteProperty(globalThis, "localStorage");
-      }
-    }
-  });
-});
-
-test("Turkish connection and usage scope copy never falls back to English", () => {
-  // Key parity alone missed the English copies originally shipped on these surfaces.
-  // These namespaces contain interface prose, not model IDs or product names.
-  const keys = (Object.keys(en) as (keyof typeof en)[]).filter(key =>
-    key.startsWith("connection.")
-    || key.startsWith("usage.source.")
-    || key.startsWith("usage.scope.")
-    || key === "usage.hubOffline",
-  );
-  expect(keys.length).toBeGreaterThan(0);
-  const untranslated = keys.filter(key => DICTS.tr[key] === en[key]);
-  expect(untranslated).toEqual([]);
-});
-
-test("Turkish request pacing describes spacing requests rather than accelerating them", () => {
-  expect(DICTS.tr["pws.completion.request_pacing"]).toContain("İstek aralığı");
-  expect(DICTS.tr["pws.completion.request_pacing"]).not.toContain("hızlandırma");
-});
-
-test("Portuguese status, reference time, home navigation and Remote Link roles retain their meaning", () => {
-  expect(DICTS.pt["pws.allSystemsOk"]).toBe("Tudo funcionando normalmente");
-  expect(DICTS.pt["lab.col.asOf"]).toBe("Data de referência");
-  expect(DICTS.pt["nav.goHome"]).toBe("Ir para o painel");
-  for (const key of ["compactionRouting.comboWarning", "compactionRouting.comboWarningScoped"] as const) {
-    expect(DICTS.pt[key]).toContain("um ou mais provedores de destino podem receber a conversa");
-    expect(DICTS.pt[key]).toContain("pode repetir");
-  }
-  for (const prefix of ["link", "remoteLink"] as const) {
-    expect(DICTS.pt[`${prefix}.role.home`]).toBe("Home");
-    expect(DICTS.pt[`${prefix}.role.child`]).toBe("Child");
-  }
-  for (const value of Object.values(DICTS.pt)) expect(value).not.toMatch(/\\["']/);
 });

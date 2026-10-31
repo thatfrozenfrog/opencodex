@@ -432,32 +432,11 @@ in `Cargo.lock`), not from `package.json`, and the release workflow injects none
 together with `package.json` through `scripts/release-version-sources.ts`, and the release refuses
 to build when they disagree with the requested version; see `ops/docs-and-release.md`.
 
-## Widget snapshot
-
-The macOS desktop shell writes the WidgetKit snapshot to
-`~/Library/Containers/com.opencodex.desktop.widget/Data/Library/Application Support/OpenCodex/snapshot.json`.
-The schema version is `1`; the Rust writer refreshes it every five minutes after an
-immediate first write. The WidgetKit appex reads this privacy-safe file and performs no
-network access.
-
-The WidgetKit extension in `app/` needs three things that Xcode's app-extension target
-would supply on its own, and SwiftPM has no such target: `@main` on
-`OpenCodexWidgetBundle`, the `-e _NSExtensionMain` linker entry, and
-`-application-extension` — the compiler spelling of `APPLICATION_EXTENSION_API_ONLY` — all
-in `app/Package.swift`. Any one missing yields a widget that never appears: without
-`@main` the linker drops the bundle and the extension registers with nothing to offer, and
-without the entry override ExtensionFoundation traps during bootstrap. Nothing observable
-distinguishes these from a working widget, because the bundle still builds, signs and
-registers. `com.apple.security.app-sandbox` is also mandatory — `pkd` refuses to register
-an unsandboxed plug-in at all — which is why the shell writes its snapshot into the
-extension's own container rather than a shared App Group, which ad-hoc signing cannot use.
-
 ## The tray icon opens a usage popup
 
 `app/Sources/NativeTray/` defines the macOS SwiftUI display model and AppKit panel library.
 It accepts a versioned display-only snapshot and emits UI actions; it owns no network client,
 runtime process or application loop. `NativeTrayTests` exercises its decoding and formatting.
-The library is built separately from the WidgetKit extension.
 
 A left click on the tray icon opens a small always-on-top window anchored to the icon, not the
 dashboard. Reading the current numbers is the reason to look at a tray icon at all, and the

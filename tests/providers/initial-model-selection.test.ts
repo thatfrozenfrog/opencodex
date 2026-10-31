@@ -325,7 +325,7 @@ describe("initial provider model switches", () => {
     const desktop = await api(config, "/api/claude-desktop");
     expect(desktop.status).toBe(200);
     expect((await desktop.json()).models.some((model: { route: string }) => model.route.startsWith("vendor/"))).toBe(false);
-    for (const path of ["/api/injection-model", "/api/subagent-model-fallback"]) {
+    for (const path of ["/api/injection-model"]) {
       const candidates = await (await api(config, path)).json();
       expect(JSON.stringify(candidates.available)).not.toContain("vendor/");
     }

@@ -81,7 +81,7 @@ describe("CLI subcommand help", () => {
     const exportHelp = runCli(["help", "export"]);
     expectSpawnFinished(exportHelp, "ocx help export");
     expect(exportHelp.status).toBe(0);
-    expect(exportHelp.stdout).toContain("opencode|pi|omp|hermes|openclaw|kimi|gajae|dsh");
+    expect(exportHelp.stdout).toContain("opencode|pi|hermes|openclaw|kimi|gajae|dsh");
     expect(exportHelp.stdout).toContain("DeepSeek Harness");
   });
 

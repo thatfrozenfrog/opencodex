@@ -66,10 +66,9 @@ not make GitHub's later ready mutation atomic with concurrent edits or pushes.
 
 The provider configuration reference and provider guide own the public Google tool-schema policy:
 the persisted values/default, initial refusal, non-direct repair withholding, direct no-repair
-behavior, and content-free diagnostics. English and all translated copies change together.
+behavior, and content-free diagnostics. The English reference and guide change together.
 
-The public documentation site lives in `docs-site/` and is built with Astro + Starlight. English is
-served at the site root, with French under `/fr`, Korean under `/ko`, Simplified Chinese under `/zh-cn`, Traditional Chinese under `/zh-tw`, Russian under `/ru`, Japanese under `/ja`, and Turkish under `/tr`. `docs-site/astro.config.mjs` is the locale source of truth.
+The English documentation site lives in `docs-site/` and is built with Astro + Starlight.
 
 Internal links are checked in two places. `docs-site/src/integrations/internal-links.mjs` runs inside the
 Astro build, so the CI `docs` job and Deploy Docs both refuse a site whose generated HTML carries an
@@ -78,17 +77,16 @@ only generated HTML: client-rendered links and other hosts are outside it. `test
 checks the docs URLs hard-coded in README files, `src/`, `gui/src/`, `skills/` and issue templates against the
 content tree, without fragments, and only on pull requests that start the Bun suite.
 
-Server-configuration credential rows in English and every locale copy distinguish data-plane `apiKeys` from the independent management admin credential and link the matching locale management reference. Credential setup instructions themselves stay in the management reference; the rows only name the separation.
+Server-configuration credential rows distinguish data-plane `apiKeys` from the independent management admin credential and link the matching locale management reference. Credential setup instructions themselves stay in the management reference; the rows only name the separation.
 
-Proxy-format, adapter, and provider documentation distinguishes server-level SOCKS5 configured outbound fetch from scheme-specific HTTP(S) routing, and every locale copy carrying that claim stays aligned. The public pages own the runtime detail rather than duplicating it here.
+Proxy-format, adapter, and provider documentation distinguishes server-level SOCKS5 configured outbound fetch from scheme-specific HTTP(S) routing, with the implementation. The public pages own the runtime detail rather than duplicating it here.
 
 Manual navigation is defined in `docs-site/astro.config.mjs`. When adding a public page, update the
-sidebar and either add localized copies or intentionally accept Starlight fallback behavior.
+sidebar.
 
 Provider preset totals are recounted from the current registry when a preset lands. The
-documented split is 175 total: 154 key-based, 17 OAuth, three local, and one default
-ChatGPT-forward preset. The English provider guide, all seven translated copies, and all eight
-quickstarts carry the same counts.
+documented split is 176 total: 155 key-based, 17 OAuth, three local, and one default
+ChatGPT-forward preset. The provider guide and quickstart carry the same counts.
 
 That recount is no longer a manual obligation. Seventeen places restate these numbers and sixteen
 of them drifted once already — the English guide reached 95 while every translation and every

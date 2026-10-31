@@ -63,3 +63,28 @@ test("the provider table qualifies unresolved requests without hiding their usag
   expect(markup).toContain("width:80%");
   expect(markup).not.toContain("~$");
 });
+
+test("unpriced models offer manual pricing while zero-cost models do not", () => {
+  const rows = [
+    { ...base, model: "missing", estimatedCostUsd: undefined },
+    { ...base, model: "free", estimatedCostUsd: 0 },
+  ];
+  const markup = renderToStaticMarkup(<LanguageProvider>
+    <ProviderUsage item={item} apiBase="" onPriceSaved={() => {}} modelUsage={rows} />
+  </LanguageProvider>);
+  expect(markup).toContain('aria-label="Bill missing as another model"');
+  expect(markup).not.toContain('aria-label="Bill free as another model"');
+});
+
+test("unresolved and ordinary usage of the same model appear in separate tables", () => {
+  const rows = [
+    { ...base, model: "same-model" },
+    { ...base, model: "same-model", hasUnresolvedRequestedModel: true as const },
+  ];
+  const markup = renderToStaticMarkup(<LanguageProvider>
+    <ProviderUsage item={item} modelUsage={rows} />
+  </LanguageProvider>);
+  expect(markup.match(/<table/g)).toHaveLength(2);
+  expect(markup.match(/same-model/g)).toHaveLength(2);
+  expect(markup).toContain("Includes unresolved requested model usage");
+});

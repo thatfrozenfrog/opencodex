@@ -1,6 +1,5 @@
 import {
   CliUsageError,
-  csv,
   desktopSwitchApplyReason,
   printData,
   rejectArgs,
@@ -27,9 +26,6 @@ const USAGE = `Usage:
       [--prompt <text|->] [--guidance <on|off>] [--sync-codex-defaults <on|off>] [--json]
   ocx agent injection suggest <work description> [--model <id>] [--apply] [--json]
   ocx agent effort <status|set> [--main <level|->] [--subagent <level|->] [--json]
-  ocx agent subagents <status|set|clear> [model,model...] [--json]
-  ocx agent subagents force <model|-> [--json]
-  ocx agent fallback <status|set|clear> [model,model...] [--poll-ms <5000-600000>] [--json]
   ocx agent roles [status|set <role> <model> [--effort <level>]|suggest [--model <id>] [--apply]] [--json]
   ocx agent sidecar <status|web|vision> [--list] [--model <id|->]
       [--backend web:<openai|anthropic|xai|gemini|exa|-> vision:<openai|anthropic|routed|->]
@@ -47,15 +43,13 @@ async function status(argv: string[], deps: RuntimeApiDeps): Promise<void> {
   const args = [...argv];
   const wantsJson = takeFlag(args, "--json");
   rejectArgs(args, USAGE);
-  const [v2, injection, caps, subagents, fallback, sidecars] = await Promise.all([
+  const [v2, injection, caps, sidecars] = await Promise.all([
     runtimeRequest("/api/v2", {}, deps),
     runtimeRequest("/api/injection-model", {}, deps),
     runtimeRequest("/api/effort-caps", {}, deps),
-    runtimeRequest("/api/subagent-models", {}, deps),
-    runtimeRequest("/api/subagent-model-fallback", {}, deps),
     runtimeRequest("/api/sidecar-settings", {}, deps),
   ]);
-  const result = { v2, injection, caps, subagents, fallback, sidecars };
+  const result = { v2, injection, caps, sidecars };
   printData(result, wantsJson, summaryLines(result));
 }
 
@@ -161,65 +155,6 @@ async function effort(argv: string[], deps: RuntimeApiDeps): Promise<void> {
   if (Object.keys(body).length === 0) throw new CliUsageError("--main and/or --subagent is required", USAGE);
   const result = await runtimeRequest("/api/effort-caps", { method: "PUT", body: JSON.stringify(body) }, deps);
   printData(result, wantsJson, ["Agent effort caps updated."]);
-}
-
-async function subagents(argv: string[], deps: RuntimeApiDeps): Promise<void> {
-  const args = [...argv];
-  const action = (args.shift() ?? "status").toLowerCase();
-  const wantsJson = takeFlag(args, "--json");
-  if (action === "status") {
-    rejectArgs(args, USAGE);
-    const result = await runtimeRequest("/api/subagent-models", {}, deps);
-    printData(result, wantsJson, summaryLines(result));
-    return;
-  }
-  if (action === "force") {
-    const model = args.shift();
-    if (!model?.trim()) throw new CliUsageError("a force model or - is required", USAGE);
-    rejectArgs(args, USAGE);
-    const force = clearable(model);
-    const result = await runtimeRequest("/api/subagent-models", { method: "PUT", body: JSON.stringify({ force }) }, deps);
-    printData(result, wantsJson, [force ? `Claude subagent force: ${force}. Applies on the next routed ocx claude launch.` : "Claude subagent force cleared."]);
-    return;
-  }
-  let models: string[];
-  if (action === "clear") models = [];
-  else if (action === "set") {
-    const raw = args.shift();
-    if (!raw) throw new CliUsageError("comma-separated subagent models are required", USAGE);
-    models = csv(raw) ?? [];
-  } else throw new CliUsageError(`unknown subagents action ${action}`, USAGE);
-  rejectArgs(args, USAGE);
-  if (models.length > 5) throw new CliUsageError("at most 5 subagent models are allowed", USAGE);
-  const result = await runtimeRequest("/api/subagent-models", { method: "PUT", body: JSON.stringify({ models }) }, deps);
-  printData(result, wantsJson, [`Subagent roster: ${models.join(", ") || "cleared"}`]);
-}
-
-async function fallback(argv: string[], deps: RuntimeApiDeps): Promise<void> {
-  const args = [...argv];
-  const action = (args.shift() ?? "status").toLowerCase();
-  const wantsJson = takeFlag(args, "--json");
-  if (action === "status") {
-    rejectArgs(args, USAGE);
-    const result = await runtimeRequest("/api/subagent-model-fallback", {}, deps);
-    printData(result, wantsJson, summaryLines(result));
-    return;
-  }
-  const body: Record<string, unknown> = {};
-  if (action === "clear") body.models = [];
-  else if (action === "set") {
-    const raw = args[0] && !args[0].startsWith("--") ? args.shift() : undefined;
-    if (raw) body.models = csv(raw) ?? [];
-  } else throw new CliUsageError(`unknown fallback action ${action}`, USAGE);
-  const pollMs = takeIntegerOption(args, "--poll-ms", { min: 5_000 });
-  if (pollMs !== undefined) {
-    if (pollMs > 600_000) throw new CliUsageError("--poll-ms must be <= 600000", USAGE);
-    body.pollMs = pollMs;
-  }
-  rejectArgs(args, USAGE);
-  if (Object.keys(body).length === 0) throw new CliUsageError("models and/or --poll-ms is required", USAGE);
-  const result = await runtimeRequest("/api/subagent-model-fallback", { method: "PUT", body: JSON.stringify(body) }, deps);
-  printData(result, wantsJson, ["Subagent fallback settings updated."]);
 }
 
 async function sidecar(argv: string[], deps: RuntimeApiDeps): Promise<void> {
@@ -444,8 +379,6 @@ export async function handleAgentCommand(argv: string[], deps: RuntimeApiDeps = 
     if (sub === "status") await status(rest, deps);
     else if (sub === "injection" || sub === "guidance") await injection(rest, deps);
     else if (sub === "effort") await effort(rest, deps);
-    else if (sub === "subagents" || sub === "roster") await subagents(rest, deps);
-    else if (sub === "fallback") await fallback(rest, deps);
     else if (sub === "roles") await roles(rest, deps);
     else if (sub === "sidecar") await sidecar(rest, deps);
     // Lives here rather than as a top-level verb because it is an agent-behavior feature flag:

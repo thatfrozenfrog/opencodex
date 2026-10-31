@@ -126,7 +126,7 @@ the one scoped write.
 
 Coverage: `tests/routing/fallback-policy.test.ts` (precedence matrix, degrade, device identity, contract,
 privacy), `tests/responses/responses-combo-fallback-off.test.ts`, `tests/routing/routing-policy-fallback-off.test.ts`,
-`tests/routing/subagent-model-fallback-off.test.ts`, `tests/codex-integration/main-account-hard-lock-fallback-off.test.ts`,
+`tests/codex-integration/main-account-hard-lock-fallback-off.test.ts`,
 `tests/server/fallback-routes.test.ts`, `tests/clients/client-home-unreachable.test.ts`, `tests/cli/cli-fallback.test.ts`
 and `gui/tests/fallback-panel.test.tsx`.
 

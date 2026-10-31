@@ -6,16 +6,6 @@ import { formatEstimatedUsdValue as formatUsageUsd } from "../src/intl-formatter
 
 const LOCALE_TAGS: Record<Locale, string> = {
   en: "en-US",
-  ko: "ko-KR",
-  ja: "ja-JP",
-  zh: "zh-CN",
-  "zh-TW": "zh-TW",
-  de: "de-DE",
-  fr: "fr-FR",
-  ru: "ru-RU",
-  tr: "tr-TR",
-  vi: "vi-VN",
-  pt: "pt-BR",
 };
 
 function translator(locale: Locale): TFn {

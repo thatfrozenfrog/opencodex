@@ -135,28 +135,17 @@ test("2. every preset is small and names no tool, identity, or environment fact"
 
 test("3. every preset states a source and says it is not a copy, in every locale", async () => {
   // This is a licensing statement, so an untranslated or softened rendering is a
-  // real defect rather than a copy nit. English-only checking left eight locales
-  // unprotected.
-  const locales = await Promise.all([
-    import("../src/i18n/en"), import("../src/i18n/ko"), import("../src/i18n/ja"),
-    import("../src/i18n/zh"), import("../src/i18n/zh-TW"), import("../src/i18n/ru"),
-    import("../src/i18n/de"), import("../src/i18n/fr"), import("../src/i18n/tr"),
-  ]);
-  const dicts = locales.map(m => Object.values(m)[0] as Record<string, string>);
-  expect(dicts).toHaveLength(9);
+  // real defect rather than a copy nit.
+  const dict = en;
 
   for (const preset of PRESETS) {
-    for (const dict of dicts) {
-      const provenance = dict[preset.provenanceKey];
-      expect(provenance, preset.id).toBeTruthy();
-      // Long enough to be a sentence rather than a label: every one of these names
-      // a source AND disclaims copying, which does not fit in three words.
-      expect(provenance!.length, preset.id).toBeGreaterThan(20);
-    }
-    // The English text is the one we can assert semantically.
-    const english = en[preset.provenanceKey];
-    expect(english, preset.id).toMatch(/Adapted from|Written for/);
-    expect(english, preset.id).toContain("not a copy");
+    const provenance = dict[preset.provenanceKey];
+    expect(provenance, preset.id).toBeTruthy();
+    // Long enough to be a sentence rather than a label: every one of these names
+    // a source AND disclaims copying, which does not fit in three words.
+    expect(provenance!.length, preset.id).toBeGreaterThan(20);
+    expect(provenance, preset.id).toMatch(/Adapted from|Written for/);
+    expect(provenance, preset.id).toContain("not a copy");
   }
 });
 

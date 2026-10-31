@@ -31,7 +31,6 @@ PY
 }
 verify_member app "$app"
 verify_member ocx "$app/Contents/MacOS/ocx"
-verify_member widget "$app/Contents/PlugIns/OpenCodexWidget.appex"
 # Release stripping removes the nlist symbol table; inspect the loader's bindings.
 xcrun llvm-objdump --macho --dyld-info "$app/Contents/MacOS/$executable" > "$scratch/native-symbols.txt"
 grep -q NSGlassEffectView "$scratch/native-symbols.txt" || { echo 'Native Liquid Glass code is absent' >&2; exit 1; }

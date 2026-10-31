@@ -30,6 +30,7 @@ export async function refreshOwnedCatalogIntegrations(
     },
   } : undefined;
   for (const clientId of clientIds) {
+    if (options.refreshOnly && clientId === "pi" && input.config.clientIntegrations?.pi === false) continue;
     if (admit?.() === false) break;
     try {
       if (clientId === "aside") {

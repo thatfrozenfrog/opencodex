@@ -113,7 +113,7 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "GET", path: "/api/codex-auth/low-quota-events", module: "server/management/low-quota-routes", mutates: false, exempt: { reason: "deferred-verb", why: "The authenticated event history is an operator diagnostic with no CLI verb yet.", owner: "rt5 low-quota", ownerDoc: "structure/gui-and-management-api.md" } },
   { method: "GET", path: "/api/codex-auth/reset-credits", module: "codex/auth-api/routes", mutates: false },
   { method: "PATCH", path: "/api/codex-auth/pool-strategy", module: "codex/auth-api/routes", mutates: true },
-  { method: "POST", path: "/api/codex-auth/accounts/import", module: "codex/auth-api/routes", mutates: true },
+  { method: "POST", path: "/api/codex-auth/accounts/import", module: "codex/auth-api/routes", mutates: true, exempt: { reason: "interactive-preview", why: "GUI bulk account import endpoint; no CLI verb exists." } },
   { method: "POST", path: "/api/codex-auth/accounts", module: "codex/auth-api/routes", mutates: true },
   { method: "POST", path: "/api/codex-auth/accounts/clear-cooldown", module: "codex/auth-api/routes", mutates: true },
   { method: "POST", path: "/api/codex-auth/accounts/refresh", module: "codex/auth-api/routes", mutates: true },
@@ -156,7 +156,6 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "GET", path: "/api/grok", module: "server/management/agent-settings-routes", mutates: false },
   { method: "GET", path: "/api/injection-model", module: "server/management/agent-settings-routes", mutates: false },
   { method: "POST", path: "/api/injection-model/suggest", module: "server/management/agent-settings-routes", mutates: false },
-  { method: "GET", path: "/api/subagent-model-fallback", module: "server/management/agent-settings-routes", mutates: false },
   { method: "GET", path: "/api/v2", module: "server/management/agent-settings-routes", mutates: false },
   { method: "POST", path: "/api/claude-desktop/apply", module: "server/management/agent-settings-routes", mutates: true },
   { method: "POST", path: "/api/grok/apply", module: "server/management/agent-settings-routes", mutates: true },
@@ -183,7 +182,6 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "PUT", path: "/api/effort-caps", module: "server/management/agent-settings-routes", mutates: true },
   { method: "PUT", path: "/api/grok/selection", module: "server/management/agent-settings-routes", mutates: true },
   { method: "PUT", path: "/api/injection-model", module: "server/management/agent-settings-routes", mutates: true },
-  { method: "PUT", path: "/api/subagent-model-fallback", module: "server/management/agent-settings-routes", mutates: true },
   { method: "PUT", path: "/api/v2", module: "server/management/agent-settings-routes", mutates: true },
   // server/management/subagent-model-routes
   { method: "GET", path: "/api/subagent-models", module: "server/management/subagent-model-routes", mutates: false },
@@ -285,13 +283,9 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "GET", path: "/api/storage/trash", module: "server/management/logs-usage-routes", mutates: false },
   { method: "GET", path: "/api/storage/trash/restore/test-stream", module: "server/management/logs-usage-routes", mutates: false, exempt: { reason: "test-seam", why: "Opt-in streaming seam declared at src/storage/restore-job.ts:34." } },
   { method: "GET", path: "/api/usage", module: "server/management/logs-usage-routes", mutates: false },
-  { method: "GET", path: "/api/usage/model-price-candidates", module: "server/management/logs-usage-routes", mutates: false },
+  { method: "GET", path: "/api/usage/model-price-candidates", module: "server/management/logs-usage-routes", mutates: false, exempt: { reason: "interactive-preview", why: "GUI model price candidate helper; no CLI verb exists." } },
   // server/management/usage-timeline-routes
   { method: "GET", path: "/api/usage/timeline", module: "server/management/usage-timeline-routes", mutates: false },
-  // server/management/advisor-routes
-  { method: "GET", path: "/api/advisor/settings", module: "server/management/advisor-routes", mutates: false },
-  { method: "GET", path: "/api/advisor/activity", module: "server/management/advisor-routes", mutates: false },
-  { method: "PUT", path: "/api/advisor/settings", module: "server/management/advisor-routes", mutates: true },
   // server/management/companion-routes
   { method: "POST", path: "/api/companion/open-in-browser", module: "server/management/companion-routes", mutates: true, exempt: { reason: "browser-navigation", why: "Opens the companion's current view in the system browser under normal management admission; the CLI reads the underlying settings and usage directly." } },
   { method: "GET", path: "/api/companion/settings", module: "server/management/companion-routes", mutates: false },
@@ -382,7 +376,7 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "GET", path: "/api/providers", module: "server/management/provider-routes", mutates: false },
   { method: "PATCH", path: "/api/providers", module: "server/management/provider-routes", mutates: true },
   { method: "POST", path: "/api/providers", module: "server/management/provider-routes", mutates: true },
-  { method: "POST", path: "/api/providers/import", module: "server/management/provider-routes", mutates: true },
+  { method: "POST", path: "/api/providers/import", module: "server/management/provider-routes", mutates: true, exempt: { reason: "interactive-preview", why: "GUI provider JSON import endpoint; no CLI verb exists." } },
   { method: "POST", path: "/api/providers/test-completion", module: "server/management/provider-routes", mutates: true },
   { method: "POST", path: "/api/providers/test", module: "server/management/provider-routes", mutates: true },
   { method: "PUT", path: "/api/providers", module: "server/management/provider-routes", mutates: true },

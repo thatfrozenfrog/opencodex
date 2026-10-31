@@ -55,6 +55,7 @@ interface UsageDay {
 }
 
 interface UsageDayModel {
+  hasUnresolvedRequestedModel?: true;
   model: string;
   provider: string;
   requests: number;
@@ -62,6 +63,7 @@ interface UsageDayModel {
 }
 
 interface UsageModel {
+  hasUnresolvedRequestedModel?: true;
   provider: string;
   model: string;
   resolvedModel?: string;
@@ -560,7 +562,7 @@ function WeekDayBars({ weekBars, locale, t }: { weekBars: UsageDay[]; locale: Lo
               >
                 {day.models.map(model => (
                   <div
-                    key={`${model.provider}/${model.model}`}
+                    key={`${model.provider}/${model.model}/${model.hasUnresolvedRequestedModel === true}`}
                     className="daybar-seg"
                     style={{ flexGrow: model.totalTokens, background: modelColor(model.model, model.provider) }}
                   />
@@ -583,7 +585,7 @@ function WeekDayBars({ weekBars, locale, t }: { weekBars: UsageDay[]; locale: Lo
             <span className="daybar-tip-val">{t("usage.heatmap.tooltipTokens", { tokens: formatTokens(activeDay.totalTokens, locale) })}</span>
           </div>
           {activeDay.models.slice(0, 8).map(model => (
-            <div key={`${model.provider}/${model.model}`} className="daybar-tip-row">
+            <div key={`${model.provider}/${model.model}/${model.hasUnresolvedRequestedModel === true}`} className="daybar-tip-row">
               <span className="daybar-tip-swatch" style={{ background: modelColor(model.model, model.provider) }} />
               <span className="daybar-tip-name">{modelLabel(model.model)}</span>
               <span className="daybar-tip-val">{formatTokens(model.totalTokens, locale)}</span>
@@ -809,9 +811,12 @@ function UsageModelsTable({
             const cacheCoverage = cacheHitRateTitle(model, locale, t);
             const throughputNote = throughputTitle(model, t);
             return (
-              <tr key={`${model.provider}/${model.model}`}>
+              <tr key={`${model.provider}/${model.model}/${model.hasUnresolvedRequestedModel === true}`}>
                 {/* Both pinned columns are width-capped, so carry the full value in a tooltip. */}
-                <td className="mono" title={model.model}>{modelLabel(model.model)}</td>
+                <td className="mono" title={model.model}>
+                  {modelLabel(model.model)}
+                  {model.hasUnresolvedRequestedModel === true && <span className="muted"> ({t("pws.unresolvedRequestedModel")})</span>}
+                </td>
                 <td className="muted" title={providerName}>{providerName}</td>
                 <td><div className="usage-bar"><div className="usage-bar-fill" style={{ width: `${Math.round(model.shareRatio * 100)}%` }} /></div></td>
                 <td className="num mono">{formatTokens(model.totalTokens, locale)}</td>

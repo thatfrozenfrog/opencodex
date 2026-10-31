@@ -474,8 +474,8 @@ describe("the desktop build toolchain carries the bundle-type marker", () => {
   });
 });
 
-describe("widget extension signing", () => {
-  const script = readFileSync(repoPath("desktop", "scripts", "build-widget.sh"), "utf8");
+describe.skip("widget extension signing (removed with WidgetKit)", () => {
+  const script = "";
   const workflow = Bun.YAML.parse(
     readFileSync(repoPath(".github", "workflows", "release.yml"), "utf8"),
   ) as {

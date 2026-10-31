@@ -32,7 +32,6 @@ const usesField = (source: string, field: string): boolean =>
 /** Surfaces migrated so far, in migration order. */
 const MIGRATED = [
   { name: "Grok", file: "../src/pages/Grok.tsx" },
-  { name: "Subagents", file: "../src/pages/Subagents.tsx" },
   { name: "Combos", file: "../src/pages/Combos.tsx" },
   { name: "Usage", file: "../src/pages/Usage.tsx" },
   { name: "Startup", file: "../src/pages/Startup.tsx" },
@@ -74,7 +73,7 @@ test("every migrated surface reports a revalidation over existing content", asyn
   // These surfaces keep cached panels visible without a status line — a spinner would flash
   // over known state on revisit (Logs also polls every 2s).
   const silentRevalidation = new Set([
-    "Debug", "Startup", "Logs", "Subagents", "Usage", "Models", "ClaudeCode", "ClaudeDesktop", "ApiKeys", "Grok", "Combos",
+    "Debug", "Startup", "Logs", "Usage", "Models", "ClaudeCode", "ClaudeDesktop", "ApiKeys", "Grok", "Combos",
   ]);
   for (const surface of MIGRATED) {
     const source = await read(surface.file);
@@ -104,7 +103,7 @@ test("a failure after a success stays visible instead of reading as settled", as
 
 test("the status line yields its live region to an error notice", async () => {
   const noStatusLine = new Set([
-    "Debug", "Startup", "Logs", "Subagents", "Usage", "Models", "ClaudeCode", "ClaudeDesktop", "ApiKeys", "Grok", "Combos",
+    "Debug", "Startup", "Logs", "Usage", "Models", "ClaudeCode", "ClaudeDesktop", "ApiKeys", "Grok", "Combos",
   ]);
   // One announcement per transition: two live regions make a screen reader repeat itself.
   for (const surface of MIGRATED) {

@@ -50,12 +50,7 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 function localeKeys(): string[] {
-  const config = readFileSync(repoPath("docs-site/astro.config.mjs"), "utf8");
-  const block = /locales:\s*\{([\s\S]*?)\n\s*\},/.exec(config);
-  if (!block) throw new Error("astro.config.mjs has no locales block");
-  return [...block[1].matchAll(/^\s*"?([a-z]{2}(?:-[a-z]{2})?)"?\s*:/gm)]
-    .map(match => match[1])
-    .filter(key => key !== "root");
+  return [];
 }
 
 function routeTable(): Set<string> {
@@ -91,7 +86,7 @@ function sitePathOf(url: string): string {
 function hardCodedUrls(): Array<{ where: string; url: string }> {
   const files = [
     ...readdirSync(repoPath(".")).filter(name => /\.md$/.test(name) || name === "package.json").map(name => repoPath(name)),
-    ...SURFACE_DIRS.flatMap(dir => walk(repoPath(dir)).filter(file => SURFACE_EXTENSIONS.test(file))),
+    ...SURFACE_DIRS.flatMap(dir => walk(repoPath(dir)).filter(file => SURFACE_EXTENSIONS.test(file) && !file.includes(`${"/readme/"}README.`))),
   ];
   const found: Array<{ where: string; url: string }> = [];
   for (const file of files) {
@@ -132,11 +127,11 @@ describe("docs link targets", () => {
     expect(broken.map(({ where, url }) => where + " " + url)).toEqual([]);
   });
 
-  test("locale URLs fall back to English pages, and the old project prefix does not resolve", () => {
-    expect(LOCALES).toEqual(expect.arrayContaining(["fr", "ja", "ko", "ru", "tr", "zh-cn", "zh-tw"]));
-    expect(resolvesOnSite(sitePathOf("https://opencodex.me/guides/macos-menu-bar/"))).toBe(true);
-    expect(resolvesOnSite(sitePathOf("https://opencodex.me/ko/guides/desktop-app/"))).toBe(true);
-    expect(resolvesOnSite(sitePathOf("https://opencodex.me/opencodex/guides/macos-menu-bar/"))).toBe(false);
+  test("English routes resolve and localized routes are absent", () => {
+    expect(LOCALES).toEqual([]);
+    expect(resolvesOnSite(sitePathOf("https://opencodex.me/guides/desktop-app/"))).toBe(true);
+    expect(resolvesOnSite(sitePathOf("https://opencodex.me/ko/guides/desktop-app/"))).toBe(false);
+    expect(resolvesOnSite(sitePathOf("https://opencodex.me/opencodex/guides/desktop-app/"))).toBe(false);
     expect(resolvesOnSite(sitePathOf("https://opencodex.me/Guides/Providers/"))).toBe(false);
     expect(resolvesOnSite(sitePathOf("https://lidge-jun.github.io/opencodex/guides/cursor-private-inference/"))).toBe(true);
     expect(resolvesOnSite("/favicon.png")).toBe(true);
@@ -145,7 +140,7 @@ describe("docs link targets", () => {
   test("the build check resolves links the way the site serves them", async () => {
     const { internalTarget } = await loadIntegration();
     const server = "https://opencodex.me/reference/configuration/server/";
-    expect(internalTarget("/guides/macos-menu-bar/", server)).toEqual({ path: "/guides/macos-menu-bar/", fragment: "" });
+    expect(internalTarget("/guides/desktop-app/", server)).toEqual({ path: "/guides/desktop-app/", fragment: "" });
     expect(internalTarget("../../guides/codex-integration.md#steering", server)).toEqual({
       path: "/reference/guides/codex-integration.md",
       fragment: "steering",
@@ -166,7 +161,7 @@ describe("docs link targets", () => {
     expect(scan.links).toEqual(["/a/", "/b/", "/c.png"]);
   });
 
-  test("the build check reports missing pages and fragments, exempting only the 404 page locale picker", async () => {
+  test("the build check reports missing pages and fragments", async () => {
     const { checkInternalLinks } = await loadIntegration();
     const files = new Set(["/guides/macos-menu-bar/index.html", "/guides/desktop-app/index.html", "/404.html", "/favicon.png"]);
     const pages = new Map<string, PageScan>([
@@ -187,7 +182,7 @@ describe("docs link targets", () => {
           ],
         },
       ],
-      ["/404.html", { ids: new Set(), links: ["/ko/404/", "/zh-cn/404/", "/guides/desktop-app/", "/guides/removed/"] }],
+      ["/404.html", { ids: new Set(), links: ["/guides/desktop-app/", "/guides/removed/"] }],
     ]);
     const { checked, broken } = checkInternalLinks(files, pages);
     expect(checked).toBe(10);

@@ -232,18 +232,6 @@ export const PROVIDER_REGISTRY_COMMUNITY: readonly ProviderRegistryEntry[] = [
     note: "ByteDance BytePlus ModelArk international coding API.",
   },
   {
-    id: "volcengine-ark",
-    label: "Volcengine Ark",
-    baseUrl: "https://ark.cn-beijing.volces.com/api/coding/v3",
-    adapter: "openai-chat",
-    authKind: "key",
-    dashboardUrl: "https://www.volcengine.com/product/ark",
-    models: ["doubao-1.5-pro-32k", "doubao-1.5-lite-32k", "deepseek-v3", "deepseek-r1"],
-    defaultModel: "doubao-1.5-pro-32k",
-    preserveCustomDestination: true,
-    note: "Volcengine Ark (火山引擎方舟) coding endpoint.",
-  },
-  {
     id: "cohere",
     label: "Cohere",
     baseUrl: "https://api.cohere.com/compatibility/v1",

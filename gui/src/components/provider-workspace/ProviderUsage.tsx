@@ -9,14 +9,18 @@ import { formatRequestCount, formatTokenCount, formatCostUsd, formatCostDual } f
 import type { ProviderQuotaReportView } from "../../provider-workspace/report";
 import type { AccountQuotaReading, ProviderUsageTotals, ProviderModelUsageRow } from "./types";
 import ProviderCurrentQuota from "./ProviderCurrentQuota";
+import BillAsDialog from "../BillAsDialog";
+import { formatProviderDisplayName } from "../../provider-icons";
 
-export default function ProviderUsage({ item, usageTotals, quotaReport, currentQuotaReading, quotaIdentity, modelUsage, onRefreshQuota }: {
+export default function ProviderUsage({ item, usageTotals, quotaReport, currentQuotaReading, quotaIdentity, modelUsage, onRefreshQuota, apiBase, onPriceSaved }: {
   item: WorkspaceItem;
   usageTotals?: ProviderUsageTotals;
   quotaReport?: ProviderQuotaReportView;
   currentQuotaReading?: AccountQuotaReading;
   quotaIdentity?: string;
   modelUsage?: ProviderModelUsageRow[];
+  apiBase?: string;
+  onPriceSaved?: () => void;
   /** Force a fresh quota read; omitted when the page cannot drive one. */
   onRefreshQuota?: () => Promise<boolean>;
 }) {
@@ -25,6 +29,7 @@ export default function ProviderUsage({ item, usageTotals, quotaReport, currentQ
   const isCkey = item.name === "ckey" || item.name === "ckey-vn";
   const hasUsage = usageTotals?.requests !== undefined;
   const [expandedModel, setExpandedModel] = useState<string | null>(null);
+  const [billAs, setBillAs] = useState<string | null>(null);
 
   const sortedModels = useMemo(() => {
     if (!modelUsage?.length) return [];
@@ -36,7 +41,7 @@ export default function ProviderUsage({ item, usageTotals, quotaReport, currentQ
     let total = 0;
     let hasCost = false;
     for (const m of sortedModels) {
-      if (m.estimatedCostUsd !== undefined) {
+      if (m.estimatedCostUsd != null) {
         total += m.estimatedCostUsd;
         hasCost = true;
       }
@@ -71,9 +76,11 @@ export default function ProviderUsage({ item, usageTotals, quotaReport, currentQ
         )}
       </div>
 
-      {sortedModels.length > 0 && (
-        <div className="pws-usage-block">
-          <h3 className="pws-section-title">{t("pws.modelBreakdown")}</h3>
+      {[false, true].map(unresolved => {
+        const rows = sortedModels.filter(row => (row.hasUnresolvedRequestedModel === true) === unresolved);
+        return rows.length > 0 && (
+        <div className="pws-usage-block" key={String(unresolved)}>
+          <h3 className="pws-section-title">{t(unresolved ? "pws.unresolvedRequestedModel" : "pws.modelBreakdown")}</h3>
           <div className="tbl-wrap">
             <table className="pws-model-table">
               <thead>
@@ -86,8 +93,8 @@ export default function ProviderUsage({ item, usageTotals, quotaReport, currentQ
                 </tr>
               </thead>
               <tbody>
-                {sortedModels.map(row => {
-                  const key = row.model;
+                {rows.map(row => {
+                  const key = `${unresolved}:${row.model}`;
                   const isExpanded = expandedModel === key;
                   return (
                     <Fragment key={key}>
@@ -105,7 +112,14 @@ export default function ProviderUsage({ item, usageTotals, quotaReport, currentQ
                             <div className="muted pws-model-attribution">{t("pws.unresolvedRequestedModel")}</div>
                           )}
                         </td>
-                        <td className="num mono">{isCkey ? formatCostDual(row.estimatedCostUsd, locale) : formatCostUsd(row.estimatedCostUsd, locale)}</td>
+                        <td className="num mono">
+                          {isCkey ? formatCostDual(row.estimatedCostUsd ?? undefined, locale) : formatCostUsd(row.estimatedCostUsd ?? undefined, locale)}
+                          {row.estimatedCostUsd == null && apiBase !== undefined && onPriceSaved && (
+                            <button type="button" className="btn btn-ghost btn-sm"
+                              aria-label={t("usage.billAs.actionLabel", { model: row.model })}
+                              onClick={() => setBillAs(row.model)}>{t("usage.billAs.action")}</button>
+                          )}
+                        </td>
                         <td className="num mono">{formatTokenCount(row.totalTokens, locale)}</td>
                         <td className="num">{row.requests}</td>
                         <td>
@@ -137,8 +151,13 @@ export default function ProviderUsage({ item, usageTotals, quotaReport, currentQ
             </table>
           </div>
         </div>
-      )}
+      ); })}
 
+      {billAs !== null && apiBase !== undefined && onPriceSaved && (
+        <BillAsDialog apiBase={apiBase} provider={item.name} model={billAs}
+          providerLabel={formatProviderDisplayName(item.name, t)} dropdown
+          onSaved={onPriceSaved} onClose={() => setBillAs(null)} />
+      )}
       <ProviderCurrentQuota key={`${item.name}:${quotaIdentity ?? ""}`} report={quotaReport} reading={currentQuotaReading} onRefreshQuota={onRefreshQuota} />
     </div>
   );

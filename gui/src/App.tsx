@@ -3,8 +3,6 @@ import { useKeyedClientResource } from "./client-resource";
 import Dashboard from "./pages/Dashboard";
 import Providers from "./pages/Providers";
 import Models from "./pages/Models";
-import Advisor from "./pages/Advisor";
-import Subagents from "./pages/Subagents";
 import Logs from "./pages/Logs";
 import Usage from "./pages/Usage";
 import Storage from "./pages/Storage";
@@ -17,11 +15,11 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import QuotaSummaryBar from "./components/quota-summary-bar/QuotaSummaryBar";
 import { SidebarGithubRow } from "./components/sidebar-github-row";
 import { DesktopStarOnboarding } from "./components/desktop-star-onboarding";
-import { IconMenu, IconGlobe, IconPower, IconX, IconRefresh} from "./icons";
+import { IconMenu, IconPower, IconX, IconRefresh} from "./icons";
 import { NAV_GROUPS, groupForPage, visibleGroupPages } from "./nav-groups";
 import { SectionSwitcher } from "./components/SectionSwitcher";
-import { useI18n, useT, LOCALES, localeDisplayName, type Locale, type TKey } from "./i18n/shared";
-import { Notice, Select, ToastNotice, type NoticeTone } from "./ui";
+import { useT, type TKey } from "./i18n/shared";
+import { Notice, ToastNotice, type NoticeTone } from "./ui";
 import { bootstrapApiSession, configureApiTargets, hasApiSession, installApiAuthFetch, logoutApiSession, SESSION_UNAVAILABLE_EVENT } from "./api";
 import { apiBaseForPlane, discoverApiTargets, isConnectedRuntime, runtimeRoleFromDocument, standaloneApiTargets, type ApiTargets } from "./api-targets";
 import { ConnectPairingForm } from "./connect-pairing";
@@ -48,8 +46,6 @@ const PAGE_TKEY: Record<Page, TKey> = {
   startup: "nav.startup",
   providers: "nav.providers",
   models: "nav.models",
-  subagents: "nav.subagents",
-  advisor: "nav.advisor",
   logs: "nav.logs",
   usage: "nav.usage",
   storage: "nav.storage",
@@ -131,7 +127,6 @@ export default function App() {
     };
   }, []);
   const [theme, setTheme] = useState<Theme>(readStoredTheme);
-  const { locale, setLocale } = useI18n();
   const t = useT();
   const [targets, setTargets] = useState<ApiTargets>(INITIAL_TARGETS);
   // Standalone starts settled: there is nothing to discover, so nothing to wait for.
@@ -480,18 +475,6 @@ export default function App() {
           })}
         </nav>
         <div className="sidebar-foot">
-          <div className="lang-toggle">
-            <IconGlobe aria-hidden />
-            <Select
-              value={locale}
-              options={LOCALES.map(l => ({ value: l.code, label: localeDisplayName(l.code) }))}
-              onChange={v => setLocale(v as Locale)}
-              label={t("lang.label")}
-              placement="right"
-              portal={false}
-              style={{ flex: 1, minWidth: 0, width: "100%" }}
-            />
-          </div>
           {zoomManaged ? (
             <div className="sidebar-display-row">
               {themeSwitch}
@@ -614,8 +597,6 @@ export default function App() {
                 {page === "startup" && <Startup apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
                 {page === "providers" && <Providers apiBase={sharedBase} />}
                 {page === "models" && <Models key={sharedBase} apiBase={sharedBase} restartEpoch={codexRestartEpoch} connected={targets.connected} catalogSyncedAt={targets.catalogSyncedAt} reportRestart={report} />}
-                {page === "subagents" && <Subagents key={sharedBase} apiBase={sharedBase} />}
-                {page === "advisor" && <Advisor key={sharedBase} apiBase={sharedBase} />}
                 {page === "logs" && <Logs apiBase={sharedBase} />}
                 {page === "usage" && <Usage apiBase={sharedBase} connected={targets.connected} apiKeyId={targets.apiKeyId} />}
                 {page === "storage" && <Storage apiBase={sharedBase} />}

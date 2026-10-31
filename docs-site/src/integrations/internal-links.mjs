@@ -26,11 +26,6 @@ const CANONICAL_HOST = "opencodex.me";
 const LEGACY_HOST = "lidge-jun.github.io";
 const LEGACY_PREFIX = "/opencodex";
 const UNCHECKED_PREFIXES = ["/_astro/", "/pagefind/"];
-// Starlight builds one root 404.html, but its language picker there links /<locale>/404/, which it
-// never builds. Only those links, and only on that page, are exempt; its other links are checked.
-const GENERATED_NOT_FOUND_PAGE = "/404.html";
-const LOCALE_NOT_FOUND_PATH = /^\/[a-z]{2}(?:-[a-z]{2})?\/404\/?$/;
-
 const NAMED_ENTITIES = /** @type {Record<string, string>} */ ({ amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: "\u00a0" });
 
 /**
@@ -145,8 +140,7 @@ export function checkInternalLinks(files, pages) {
       const target = internalTarget(href, base);
       if (!target) continue;
       const file = resolveFile(files, target.path);
-      if (!file && page === GENERATED_NOT_FOUND_PAGE && LOCALE_NOT_FOUND_PATH.test(target.path)) continue;
-      checked += 1;
+        checked += 1;
       if (!file) {
         broken.push({ page, href, reason: "missing-page" });
         continue;

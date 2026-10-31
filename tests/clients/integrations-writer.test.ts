@@ -87,14 +87,6 @@ function installPi(): string {
   return configPath;
 }
 
-function installOmp(): string {
-  const spec = INTEGRATION_CLIENTS.omp;
-  mkdirSync(spec.detectDir(TEST_ENV, home), { recursive: true });
-  const configPath = spec.configPath(TEST_ENV, home);
-  mkdirSync(dirname(configPath), { recursive: true });
-  return configPath;
-}
-
 function installOmo(): string {
   const spec = INTEGRATION_CLIENTS.omo;
   mkdirSync(spec.detectDir(TEST_ENV, home), { recursive: true });
@@ -807,8 +799,8 @@ describe("apply", () => {
     expect(readFileSync(configPath, "utf8")).toBe("{{{ not yaml\n");
   });
 
-  test("refuses a loopback-only client on a remote bind without denying manual OMP headers", () => {
-    for (const clientId of ["gajae", "omp", "dsh", "commandcode"] as const) {
+  test("refuses generated loopback-only integrations on a remote bind", () => {
+    for (const clientId of ["gajae", "dsh", "commandcode"] as const) {
       const spec = INTEGRATION_CLIENTS[clientId];
       mkdirSync(spec.detectDir(TEST_ENV, home), { recursive: true });
       const result = applyIntegration(input({
@@ -908,90 +900,6 @@ describe("disable", () => {
     expect(disableIntegration(input({ clientId: "kimi" })).ok).toBe(true);
     const after = Bun.TOML.parse(readFileSync(configPath, "utf8")) as { models?: Record<string, unknown> };
     expect(after.models).toEqual({ "opencodex/mine": { provider: "elsewhere" } });
-  });
-});
-
-describe("OMP source preservation", () => {
-  test("disables a generated OMP config without leaving its created container", () => {
-    const configPath = installOmp();
-    expect(applyIntegration(input({ clientId: "omp" })).ok).toBe(true);
-    expect(disableIntegration(input({ clientId: "omp" })).ok).toBe(true);
-    expect(readFileSync(configPath, "utf8")).toBe("");
-  });
-
-  test("preserves unrelated provider comments and formatting through apply, refresh, and disable", () => {
-    const configPath = installOmp();
-    const original = [
-      "# user header",
-      "providers:",
-      "  freebuff: # keep provider comment",
-      "    baseUrl: \"https://freebuff.invalid/v1\"",
-      "    api: openai-completions # keep inline comment",
-      "# user tail",
-      "settings:",
-      "  compact: false",
-      "",
-    ].join("\n");
-    writeFileSync(configPath, original);
-
-    const ompInput = input({ clientId: "omp" });
-    expect(applyIntegration(ompInput).ok).toBe(true);
-    const applied = readFileSync(configPath, "utf8");
-    expect(applied).toContain("  freebuff: # keep provider comment\n");
-    expect(applied).toContain("    api: openai-completions # keep inline comment\n");
-
-    // This edit happens after OpenCodex recorded its file fingerprint. OMP's
-    // source patcher must preserve it while refreshing only our stale block.
-    const externallyEdited = applied.replace("# user header", "# user header edited later");
-    writeFileSync(configPath, externallyEdited);
-    const refreshedModels = [...MODELS, {
-      namespaced: "openai/gpt-5.6",
-      provider: "openai",
-      id: "gpt-5.6",
-      contextWindow: 272_000,
-    }];
-    expect(applyIntegration(input({ clientId: "omp", models: refreshedModels })).ok).toBe(true);
-    const refreshed = readFileSync(configPath, "utf8");
-    expect(refreshed).toContain("# user header edited later\n");
-    expect(refreshed).toContain("  freebuff: # keep provider comment\n");
-    expect(refreshed).toContain("    api: openai-completions # keep inline comment\n");
-
-    expect(disableIntegration(input({ clientId: "omp", models: refreshedModels })).ok).toBe(true);
-    expect(readFileSync(configPath, "utf8")).toBe(
-      original.replace("# user header", "# user header edited later"),
-    );
-  });
-
-  test("refuses to rewrite an ambiguous comment inside the managed YAML block", () => {
-    const configPath = installOmp();
-    expect(applyIntegration(input({ clientId: "omp" })).ok).toBe(true);
-    const edited = readFileSync(configPath, "utf8").replace(
-      "    baseUrl:",
-      "    # user note inside managed block\n    baseUrl:",
-    );
-    writeFileSync(configPath, edited);
-
-    const result = disableIntegration(input({ clientId: "omp" }));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("unsafe");
-    expect(readFileSync(configPath, "utf8")).toBe(edited);
-  });
-
-  test("refuses disable when removing the managed block would break a YAML alias", () => {
-    const configPath = installOmp();
-    expect(applyIntegration(input({ clientId: "omp" })).ok).toBe(true);
-    const edited = readFileSync(configPath, "utf8")
-      .replace("    baseUrl:", "    baseUrl: &opencodex_url")
-      .concat("settings:\n  inheritedBase: *opencodex_url\n");
-    expect(edited).toContain("    baseUrl: &opencodex_url");
-    writeFileSync(configPath, edited);
-
-    const journalBefore = store.listOperations("omp");
-    const result = disableIntegration(input({ clientId: "omp" }));
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.reason).toBe("unsafe");
-    expect(readFileSync(configPath, "utf8")).toBe(edited);
-    expect(store.listOperations("omp")).toEqual(journalBefore);
   });
 });
 

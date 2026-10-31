@@ -38,7 +38,6 @@ import {
   isCanonicalOpenAiForwardProvider,
 } from "../providers/openai-tiers";
 import { routeModel, type RouteResult } from "../router";
-import { guardFallbackHop, type FallbackAdmission } from "../routing/fallback-policy";
 import { sweepExpiredOnWrite } from "../lib/state-store-sweeper";
 import { codexAccountNamespaceForModel } from "./account-namespace-match";
 import { ACCOUNT_GATED_NATIVE_OPENAI_MODELS, NATIVE_MAIN_DRAIN_SENTINEL_MODELS } from "./catalog/native-models";
@@ -465,13 +464,6 @@ export function getSubagentQuotaPrimeStateForTests(): {
   };
 }
 
-function rewriteParsedModel(parsed: OcxParsedRequest, model: string): void {
-  parsed.modelId = model;
-  if (parsed._rawBody && typeof parsed._rawBody === "object") {
-    (parsed._rawBody as { model?: string }).model = model;
-  }
-}
-
 const TOML_MODEL = /^(model)\s*=\s*("(?:\\.|[^"\\])*")\s*$/;
 
 function parseTomlQuotedString(raw: string): string {
@@ -616,68 +608,6 @@ export function recordSubagentQuotaFailureForThreadSpawn(
 ): void {
   if (!isThreadSpawnRequest(headers)) return;
   noteSubagentModelFailure(model, String(message), config, accountId, now, pollIntervalMs(config));
-}
-
-export function applySubagentModelFallback(
-  parsed: OcxParsedRequest,
-  headers: Headers,
-  config: OcxConfig,
-  accountId?: string | null,
-  now = Date.now(),
-  nativeFallbackOnly = false,
-  accountUsabilityOptions?: CodexAccountUsabilityOptions,
-  poolAccountPreview?: SubagentPoolAccountPreview,
-  modelEligibleAccountIdsForModel?: SubagentModelEligibleAccountIds,
-  resolvedFallbackChain?: readonly string[] | null,
-  restrictedRouteEligible?: SubagentFallbackRouteEligibility,
-  admission?: FallbackAdmission,
-): { from?: string; to?: string; skipped?: string[]; refusal?: Response } | null {
-  if (!isThreadSpawnRequest(headers)) return null;
-  const fallbackChain = resolvedFallbackChain === undefined
-    ? resolveSubagentFallbackChain(parsed, config)
-    : resolvedFallbackChain;
-  if (!fallbackChain) return null;
-  const selection = selectAvailableSubagentModel(
-    parsed.modelId,
-    config,
-    [],
-    accountId,
-    now,
-    nativeFallbackOnly,
-    accountUsabilityOptions,
-    [],
-    poolAccountPreview,
-    modelEligibleAccountIdsForModel,
-    fallbackChain,
-    restrictedRouteEligible,
-  );
-  if (!selection.rewritten) return selection.skipped.length > 0
-    ? { from: parsed.modelId, to: parsed.modelId, skipped: selection.skipped }
-    : null;
-  const from = parsed.modelId;
-  // OCX-11: the rewrite is a proactive hop away from an unavailable primary. Refused, the spawn
-  // keeps its model and the caller answers with the refusal instead of sending anything.
-  const hop = guardFallbackHop(config, {
-    site: "subagent",
-    route: from,
-    from: fallbackTargetOf(config, from),
-    to: fallbackTargetOf(config, selection.model),
-    trigger: "unavailable",
-    admission,
-    now,
-  });
-  if (!hop.ok) return { from, to: from, skipped: selection.skipped, refusal: hop.response };
-  // The rewrite is this site's admission: the spawn now carries the fallback model.
-  hop.commit();
-  rewriteParsedModel(parsed, selection.model);
-  return { from, to: selection.model, skipped: selection.skipped };
-}
-
-function fallbackTargetOf(config: OcxConfig, model: string): { provider: string; model: string } {
-  const route = tryRouteFallbackModel(config, model);
-  if (route) return { provider: route.providerName, model: route.modelId };
-  const slash = model.indexOf("/");
-  return slash > 0 ? { provider: model.slice(0, slash), model: model.slice(slash + 1) } : { provider: "", model };
 }
 
 /** Resolve the effective fallback chain once for one logical spawn request. */

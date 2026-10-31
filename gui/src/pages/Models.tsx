@@ -35,13 +35,8 @@ import RoutingProfiles from "./RoutingProfiles";
 import CompatibilityMatrix from "./CompatibilityMatrix";
 import { ModelsTabStrip } from "./models-tab-strip";
 import { ProviderFastRow } from "./models-fast-row";
-import {
-  modelsPanelDomId,
-  modelsTabDomId,
-  readModelsTab,
-  selectModelsTab,
-  type ModelsTab,
-} from "./models-tab";
+import { ModelIdentity } from "./models-identity";
+import { modelsPanelDomId, modelsTabDomId, readModelsTab, selectModelsTab, type ModelsTab } from "./models-tab";
 import {
   buildProviderModelGroups,
   type ConfiguredProviderSummary,
@@ -1742,7 +1737,7 @@ export default function Models({ apiBase, restartEpoch = 0, connected = false, c
                     )}
                      {aliases.models[provider]?.[m.id] && <strong className="mono text-control">{aliases.models[provider][m.id].alias}</strong>}
                      <span className="models-model-identity">
-                       <code className="mono text-control" style={{ color: off ? "var(--faint)" : "var(--text)", textDecoration: off ? "line-through" : "none" }}>{m.native ? modelLabel(m.id) : m.namespaced}</code>
+                       <ModelIdentity model={m} label={m.native ? modelLabel(m.id) : m.namespaced} off={off} />
                        {!m.native && m.displayName?.trim() && m.displayName.trim() !== m.namespaced && (
                          <span className="models-model-friendly text-caption">{m.displayName.trim()}</span>
                        )}

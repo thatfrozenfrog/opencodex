@@ -167,35 +167,8 @@ export function maxQuotaUtilisation(quota: AccountQuota | null): number {
   return vals.length ? Math.max(...vals) : -1;
 }
 
-function bcp47(locale: Locale): string {
-  switch (locale) {
-    case "en":
-      return "en-GB";
-    case "de":
-      return "de-DE";
-    case "fr":
-      return "fr-FR";
-    case "ko":
-      return "ko-KR";
-    case "zh":
-      return "zh-CN";
-    case "zh-TW":
-      return "zh-TW";
-    case "ru":
-      return "ru-RU";
-    case "ja":
-      return "ja-JP";
-    case "tr":
-      return "tr-TR";
-    case "vi":
-      return "vi-VN";
-    case "pt":
-      return "pt-BR";
-    default: {
-      const _exhaustive: never = locale;
-      return _exhaustive;
-    }
-  }
+function bcp47(_locale: Locale): string {
+  return "en-GB";
 }
 
 /** Display-only exhaustion cutoff (adopted with rationale: rounding shows 100%). */

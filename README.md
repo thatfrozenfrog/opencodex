@@ -77,7 +77,7 @@ Sol drives the session and calls a Kimi K3 subagent.
 </table>
 
 <p align="center">
-  <a href="README.md">English</a> · <a href="readme/README.fr.md">Français</a> · <a href="readme/README.ko.md">한국어</a> · <a href="readme/README.zh-CN.md">简体中文</a> · <a href="readme/README.zh-TW.md">繁體中文</a> · <a href="readme/README.ru.md">Русский</a> · <a href="readme/README.ja.md">日本語</a> · <a href="readme/README.tr.md">Türkçe</a> · 📖 <a href="https://opencodex.me/"><b>Full documentation →</b></a>
+  <a href="README.md">English</a> · 📖 <a href="https://opencodex.me/"><b>Full documentation →</b></a>
 </p>
 
 opencodex is a lightweight local proxy that translates Codex's Responses API into whatever your
@@ -116,14 +116,9 @@ platform from the [latest release](https://github.com/lidge-jun/opencodex/releas
 | Windows (x64) | `OpenCodex-<version>-windows-x64.msi` | Code signing via SignPath Foundation is rolling out ([code signing policy](https://opencodex.me/reference/code-signing/)); until a release is signed, SmartScreen asks once: choose **More info → Run anyway** |
 | Linux (x86_64) | `OpenCodex-<version>-linux-x86_64.AppImage` or `-linux-amd64.deb` | The tray needs an AppIndicator-capable desktop |
 
-Every file has a `.sha256` next to it on the release page. On macOS 14+ the app also ships a
-WidgetKit extension that shows proxy status, today's usage and provider quotas; the snapshot model
-it renders lives in [`app/`](./app) (`MenuBarCore`). To build the app yourself, run
+Every file has a `.sha256` next to it on the release page. To build the app yourself, run
 `bun install && bun run build:gui` at the repository root, then in `desktop/` run
-`bun install && bun run prepare-sidecar && bun run prepare-widget && bun run build:local` on macOS,
-or `bun install && bun run prepare-sidecar && bun run build:local` on Windows and Linux (the widget
-step needs macOS). The [Desktop App guide](https://opencodex.me/guides/desktop-app/) and the
-[macOS Menu Bar App guide](https://opencodex.me/guides/macos-menu-bar/) cover first launch, and
+`bun install && bun run prepare-sidecar && bun run build:local`. The [Desktop App guide](https://opencodex.me/guides/desktop-app/) covers first launch, and
 [`AGENTS_INSTALL.md`](./AGENTS_INSTALL.md#where-things-are-installed) lists everything written to disk.
 
 </details>

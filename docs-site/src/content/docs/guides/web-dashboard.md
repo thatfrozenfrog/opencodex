@@ -71,7 +71,7 @@ host and port over a LAN IP or an alias.
 
 ## Dashboard layout
 
-The sidebar has eight rows, in order: **Dashboard**, **Connect**, **Codex**, **Providers**, **Models**, **Subagents**, **Usage & Logs**, and **Remote Link**. **Connect** opens the page headed **Connect**, with its tab strip ordered **Codex**, **Claude**, **Claude Desktop**, **Grok Build**, then the remaining integrations. Claude has no sub-tabs; it shows the Claude Code settings directly. Claude Desktop is a separate Connect tab at `#claude/desktop`. Connect has no section switcher. **Subagents** opens Subagents and groups Subagents and Advisor (`#advisor`) with a pill-shaped section switcher. **Usage & Logs** opens Usage and groups Usage, Logs & Debug, and Storage with a pill-shaped section switcher. The last row, **Remote Link**, groups Remote Link (`#remote`) and Remote Workspace (`#remote-workspace`, when available) with the same switcher. **Codex** is the renamed **Codex Set** row; the preserved URLs include `#codex-set`, `#claude`, `#claude/code`, and `#claude/desktop`; the former `#claude/settings` bookmark opens Code. The former `#claude/account` bookmark redirects to `#providers?provider=anthropic&tab=accounts`. Startup (`#startup`) stays outside the sidebar.
+The sidebar has seven rows, in order: **Dashboard**, **Connect**, **Codex**, **Providers**, **Models**, **Usage & Logs**, and **Remote Link**. **Connect** opens the page headed **Connect**, with its tab strip ordered **Codex**, **Claude**, **Claude Desktop**, **Grok Build**, then the remaining integrations. Claude has no sub-tabs; it shows the Claude Code settings directly. Claude Desktop is a separate Connect tab at `#claude/desktop`. Connect has no section switcher. **Usage & Logs** opens Usage and groups Usage, Logs & Debug, and Storage with a pill-shaped section switcher. The last row, **Remote Link**, groups Remote Link (`#remote`) and Remote Workspace (`#remote-workspace`, when available) with the same switcher. **Codex** is the renamed **Codex Set** row; the preserved URLs include `#codex-set`, `#claude`, `#claude/code`, and `#claude/desktop`; the former `#claude/settings` bookmark opens Code. The former `#claude/account` bookmark redirects to `#providers?provider=anthropic&tab=accounts`. Startup (`#startup`) stays outside the sidebar.
 
 Responses first-output timing includes streamed function arguments and custom-tool input, as well
 as text and reasoning. A tool-only turn can therefore have a first-output time even without prose.
@@ -188,7 +188,7 @@ rows and returns keyboard focus to the All surface control; “No matching reque
 differs from an empty log ring. Use arrow keys or Home/End in
 the surface selector. These controls do not query historical records beyond the loaded ring.
 
-The language picker includes **Português** (Brazilian Portuguese, `pt-BR`). Portuguese browser languages select it automatically unless a supported language preference is already saved.
+The dashboard and documentation are available in English only.
 
 ### Linking to a section
 
@@ -210,7 +210,10 @@ Each **Usage** Models row has a **Bill as** action: it lists up to ten models.de
 fuzzily matches that model, and the selected listing's four rates are saved as this provider's
 `modelCosts` entry for the model. **Use automatic pricing** removes that override. A row whose model
 exists only on a reseller (for example DeepSeek v4.1 through several gateways) stays unpriced until
-you choose a listing, because guessing which listing applies would misstate the amount.
+you choose a listing, because guessing which listing applies would misstate the amount. In **Providers**,
+open a provider's **Usage** tab and use **Bill as** beside an unpriced model to choose from a dropdown
+of matching models.dev listings. Saving refreshes the usage estimates; the selected rates are a manual
+estimate, not the provider's actual invoice.
 
 For a custom usage interval, the server must confirm the exact requested start and end times.
 If an older running proxy does not support those bounds, the dashboard and CLI reject its report;
@@ -233,10 +236,12 @@ coverage stays distinct from an all-excluded row and from a confirmed zero estim
 These are not billing receipts or evidence of an actual charge; subscription usage or provider credits
 may apply instead.
 
-Provider model rows may include **unresolved requested model usage**: the saved route sent the
+The provider Usage tab separates **unresolved requested model usage** from its other model rows:
+the saved route sent the
 requested name unchanged to the default provider. These tokens belong to that serving provider,
 not necessarily the vendor named in the request. The dashboard preserves the original name and
-usage rather than guessing which model ran. For slash-containing unresolved names, a different
+usage rather than guessing which model ran. The same model can appear in both tables when some
+requests have unresolved routing evidence and others do not. For slash-containing unresolved names, a different
 vendor's model price alone is not enough to estimate cost; an exact provider or configured price
 still applies. Model shares are calculated within the selected provider. Requests for an unknown
 reserved `policy/` name now fail before reaching an upstream provider; historical usage is retained.
@@ -249,7 +254,11 @@ observation yet, loading, failed lookup with last-known values, and measured zer
 states. **Quota check completed** means the read settled—not that a passive observation became
 new or that every upstream measurement was refreshed.
 
+Ckey usage estimates use the account's Ckey model prices, including per-request and minimum charges. VND prices are converted using an approximate rate of 25,000 VND per USD; estimates are not billing statements. A model without a usable Ckey price remains unpriced unless a manual price override is set.
+
 ## Model visibility
+
+In the Models page, Ckey model IDs in the form `username-model-name` link to the corresponding Ckey model page in a new tab. IDs without that form remain plain text.
 
 The **Models** switches show final Codex visibility: a routed model is on only when its provider allowlist includes it (or no allowlist is set) and it is not disabled. Turning a model on reconciles both filters atomically; **All on** clears the provider allowlist so newly discovered models are also on.
 
