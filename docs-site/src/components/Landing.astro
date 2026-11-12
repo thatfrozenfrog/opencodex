@@ -15,11 +15,11 @@ import {
 	siOllama,
 	siOpenrouter,
 } from 'simple-icons';
-import demo from '../assets/demo.gif';
 import dashboard from '../assets/dashboard.png';
 import picker from '../assets/codex-app-picker.png';
 import heroFieldLight from '../assets/hero-route-light.png';
 import heroFieldDark from '../assets/hero-route-dark.png';
+import CloudCanvas from './CloudCanvas.astro';
 import SiteJsonLd from './SiteJsonLd.astro';
 import { GITHUB_URL, getStarCount, formatStarCount } from '../data/github-stars';
 
@@ -33,6 +33,7 @@ const starCount = await getStarCount();
 const starLocale = 'en';
 const githubCta = t('Star on GitHub');
 const starLabel = t('Star on GitHub, {count} stars');
+
 const githubAccessibleName = starCount === null ? githubCta
 	: starLabel.replace('{count}', new Intl.NumberFormat(starLocale).format(starCount));
 
@@ -80,6 +81,7 @@ const quickstart = [
 	{ cmd: 'ocx init', note: t('Inject a provider into Codex') },
 	{ cmd: 'ocx start', note: t('Start the proxy') },
 	{ cmd: 'codex "Write a hello world in Rust"', note: t('Codex now routes through ocx') },
+
 ];
 
 // full docs map for the closing sitemap band (also the mobile path to every section)
@@ -93,6 +95,7 @@ const docsMap = [
 			{ label: t('Quickstart'), href: `${prefix}getting-started/quickstart/` },
 			{ label: t('How It Works'), href: `${prefix}getting-started/how-it-works/` },
 			{ label: t('Agent Quickstart'), href: `${prefix}getting-started/for-agents/` },
+
 		],
 	},
 	{
@@ -129,6 +132,7 @@ const docsMap = [
 		icon: 'folder',
 		links: [
 			{ label: t('Contributing'), href: `${prefix}contributing/` },
+
 			{ label: 'GitHub', href: 'https://github.com/lidge-jun/opencodex' },
 			{ label: 'npm', href: 'https://www.npmjs.com/package/@bitkyc08/opencodex' },
 		],
@@ -149,8 +153,14 @@ const docsMap = [
 	<section class="lp-scene lp-scene-hero">
 	<div class="lp-scene-inner lp-hero-field">
 		<div class="lp-field-bg" aria-hidden="true">
-			<Image src={heroFieldLight} alt="" class="lp-field-light" loading="eager" widths={[1024, 2048]} sizes="100vw" />
-			<Image src={heroFieldDark} alt="" class="lp-field-dark" loading="lazy" widths={[1024, 2048]} sizes="100vw" />
+			<div class="lp-field-photo" data-depth="1">
+				<Image src={heroFieldLight} alt="" class="lp-field-light" loading="eager" widths={[1024, 2048]} sizes="100vw" />
+				<Image src={heroFieldDark} alt="" class="lp-field-dark" loading="lazy" widths={[1024, 2048]} sizes="100vw" />
+			</div>
+			<div class="lp-field-clouds" data-depth="-1.6">
+				<CloudCanvas variant="overlay" />
+			</div>
+			<div class="lp-field-scrim"></div>
 		</div>
 		<div class="lp-hero-copy">
 			<a class="lp-announce" href="#download">
@@ -162,6 +172,7 @@ const docsMap = [
 			    inline-grid stacking; reduced-motion collapses to a static pairing. */}
 			<h1 id="_top">
 				{t('Run ')}<span class="lp-drum" aria-label="Codex and Claude">
+
 					<span class="lp-drum-spin" aria-hidden="true">
 						<span class="lp-drum-face lp-drum-codex">Codex</span>
 						<span class="lp-drum-face lp-drum-claude">Claude</span>
@@ -173,6 +184,7 @@ const docsMap = [
 			</h1>
 			<p class="lp-sub">
 				{t('opencodex is a local proxy that serves Codex and Claude Code from one port — translating each wire format to any provider, with streaming, tool calls, reasoning, and images in both directions. Zero client patches.')}
+
 			</p>
 			<div class="lp-cta">
 				<a class="lp-btn-primary" id="lp-hero-download" href="#download"
@@ -185,6 +197,7 @@ const docsMap = [
 				<a class="lp-btn-ghost" href={`${prefix}getting-started/installation/`}>{t('Get Started')}</a>
 			</div>
 		<ul class="lp-chips" aria-label={t('Supported providers')}>
+
 				{providers.map((p) => (
 					<li>
 						{p.path && (
@@ -200,6 +213,7 @@ const docsMap = [
 		</div>
 		<div class="lp-stage-in">
 			<Image src={dashboard} alt={t('The opencodex dashboard — live proxy status, routed providers, and available models')} loading="eager" />
+
 		</div>
 	</div>
 	</section>
@@ -211,6 +225,7 @@ const docsMap = [
 		<h2 class="lp-download-title">{t('Download OpenCodex')}</h2>
 		<p class="lp-download-sub">{t('The desktop app bundles the proxy, the dashboard and a tray. Beta.')}</p>
 		<p class="lp-download-version"><span data-lp-version-wrap hidden>{t('Latest release')} <span data-lp-version></span></span></p>
+
 		<div class="lp-dl-grid">
 			<article class="lp-dl-card" data-platform="macos">
 				<svg class="lp-dl-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={siApple.path} /></svg>
@@ -220,16 +235,19 @@ const docsMap = [
 					<a class="lp-dl-btn" data-lp-asset="dmg" href="https://github.com/lidge-jun/opencodex/releases/latest"><svg class="lp-dl-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons.download} /></svg>{t('Download')}<span class="lp-dl-btn-fmt">.dmg</span></a>
 				</div>
 				<p class="lp-dl-reco">{t('Recommended for your system')}</p>
+
 			</article>
 			<article class="lp-dl-card" data-platform="windows">
 				<svg class="lp-dl-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={icons.windows} /></svg>
 				<h3>Windows</h3>
 				<p class="lp-dl-meta">x64 · .msi</p>
 				<p class="lp-dl-note">{t('Installer not code-signed yet')}</p>
+
 				<div class="lp-dl-actions">
 					<a class="lp-dl-btn" data-lp-asset="msi" href="https://github.com/lidge-jun/opencodex/releases/latest"><svg class="lp-dl-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons.download} /></svg>{t('Download')}<span class="lp-dl-btn-fmt">.msi</span></a>
 				</div>
 				<p class="lp-dl-reco">{t('Recommended for your system')}</p>
+
 			</article>
 			<article class="lp-dl-card" data-platform="linux">
 				<svg class="lp-dl-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={siLinux.path} /></svg>
@@ -240,6 +258,7 @@ const docsMap = [
 					<a class="lp-dl-alt" data-lp-asset="deb" href="https://github.com/lidge-jun/opencodex/releases/latest">{t('.deb package')}</a>
 				</div>
 				<p class="lp-dl-reco">{t('Recommended for your system')}</p>
+
 			</article>
 		</div>
 		<details class="lp-dl-more" hidden>
@@ -252,6 +271,7 @@ const docsMap = [
 			<a href={`${prefix}getting-started/installation/`}>{t('Installation guide')}</a>
 			<a href="https://github.com/lidge-jun/opencodex/releases/latest">{t('All releases and checksums')}</a>
 			<a href={`${prefix}guides/desktop-app/`}>{t('Desktop app guide')}</a>
+
 		</p>
 		<!-- SignPath Foundation's terms require this attribution, verbatim, and the code signing
 		     policy link on the download page; the policy page exists in English only. -->
@@ -268,6 +288,7 @@ const docsMap = [
 			<p class="lp-kline">{t('Install.')}</p>
 			<p class="lp-kline">{t('Start.')}</p>
 			<p class="lp-kline lp-kline-accent">{t('Codex, rerouted.')}</p>
+
 		</div>
 		<div class="lp-quick-side">
 			<div class="lp-terminal">
@@ -275,6 +296,7 @@ const docsMap = [
 				<pre>{quickstartMini.map((line) => (<code><span class="lp-prompt">$ </span>{line.cmd}<span class="lp-note">  # {line.note}</span>{'\n'}</code>))}</pre>
 			</div>
 			<a class="lp-inline-link" href={`${prefix}getting-started/quickstart/`}>{t('Full quickstart')} →</a>
+
 		</div>
 	</div>
 	</section>
@@ -285,9 +307,10 @@ const docsMap = [
 		<h2 class="lp-scrub-title">{t('Watch Codex run on a routed model.')}</h2>
 		<div class="lp-scrub-stage">
 			<canvas class="lp-scrub-canvas" data-base={base} data-count="158" width="900" height="802" aria-label={t('Codex App running a task on a routed non-OpenAI model')}></canvas>
-			<Image src={demo} alt={t('Codex App running a task on a routed non-OpenAI model')} loading="lazy" class="lp-scrub-poster" />
+			<img src={`${base}demo-frames/001.webp`} alt={t('Codex App running a task on a routed non-OpenAI model')} loading="lazy" class="lp-scrub-poster" />
 		</div>
 		<p class="lp-scrub-caption">{t('One task, streamed end to end through opencodex.')}</p>
+
 	</div>
 	</section>
 	</div>
@@ -331,6 +354,7 @@ const docsMap = [
 			<article class="lp-cell lp-cell-terminal">
 				<h3><svg class="lp-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={icons.code} /></svg>{t('Quickstart')}</h3>
 				<p>{t('ocx init writes a provider into your Codex config and shares one model catalog with Codex CLI, TUI, App, and SDK. ocx stop restores native Codex cleanly.')}</p>
+
 				<div class="lp-terminal">
 					<div class="lp-terminal-bar"><span>zsh</span></div>
 					<pre>{quickstart.map((line) => (<code><span class="lp-prompt">$ </span>{line.cmd}<span class="lp-note">  # {line.note}</span>{'\n'}</code>))}</pre>
@@ -340,6 +364,11 @@ const docsMap = [
 	</section>
 
 	<div class="lp-github-row">
+		<div class="lp-cloud-cta">
+			<Image src={heroFieldLight} alt="" class="lp-field-light" loading="lazy" widths={[1024, 2048]} sizes="100vw" />
+			<Image src={heroFieldDark} alt="" class="lp-field-dark" loading="lazy" widths={[1024, 2048]} sizes="100vw" />
+			<CloudCanvas variant="overlay" />
+		</div>
 		<a class="lp-github-cta" href={GITHUB_URL} aria-label={githubAccessibleName}
 			data-gh-stars-label={starLabel} data-gh-stars-locale={starLocale}>
 			<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d={siGithub.path} /></svg>
@@ -349,8 +378,9 @@ const docsMap = [
 	</div>
 
 	<!-- full docs sitemap band: every section reachable from the landing -->
-	<section class="lp-next" aria-label={t('Documentation map')}>
+	<section id="docs-map" class="lp-next" aria-label={t('Documentation map')}>
 		<h2>{t('Explore the docs')}</h2>
+
 		<div class="lp-next-grid">
 			{docsMap.map((group) => (
 				<div class="lp-next-col">
@@ -368,19 +398,293 @@ const docsMap = [
 	<p class="lp-disclaimer">
 		{t(
 			'opencodex is an independent community project, not affiliated with or endorsed by OpenAI, Anthropic, or any other provider. Some providers may restrict accounts that route traffic through third-party proxies — review each provider\u2019s Terms of Service before connecting.')}
+
 	</p>
 </div>
 
 <script>
+	// Landing motion layer. Everything here is decoration on top of content
+	// that is already fully visible: nothing is hidden until `cl-motion` lands
+	// on <html>, and reduced motion never gets the class.
+	//  - reveal: fade + 16px rise on the soft ease, staggered, once in view
+	//  - split headings: section titles rise word by word out of a blur
+	//  - hero depth: photo and clouds drift apart with pointer and scroll
+	//  - cards: cursor spotlight + spring-smoothed tilt
+	//  - magnetic CTAs and a counting star total
+	const root = document.documentElement;
+	const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+	const reduceMotion = motionPreference.matches;
+	const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+	const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+
+	if (!reduceMotion) {
+		root.classList.add('cl-motion');
+
+		const revealGroups: [string, number][] = [
+			['.lp-download-sub, .lp-download-version, .lp-dl-more, .lp-dl-foot', 0.08],
+			['.lp-dl-grid > .lp-dl-card', 0.08],
+			['.lp-scrub-stage, .lp-scrub-caption', 0.1],
+			['.lp-grid > .lp-cell', 0.07],
+			['.lp-github-row', 0],
+			['.lp-next-grid > .lp-next-col', 0.07],
+			['.lp-disclaimer', 0],
+		];
+		for (const [selector, step] of revealGroups) {
+			document.querySelectorAll<HTMLElement>(selector).forEach((el, i) => {
+				el.dataset.reveal = '';
+				el.style.setProperty('--rd', `${(i * step).toFixed(2)}s`);
+			});
+		}
+
+		document
+			.querySelectorAll<HTMLElement>('.lp-download-title, .lp-bento-title, .lp-scrub-title, .lp-next h2')
+			.forEach((heading) => {
+				const text = heading.textContent ?? '';
+				heading.setAttribute('aria-label', text);
+				heading.textContent = '';
+				text.split(/(\s+)/).forEach((part, i) => {
+					if (/^\s+$/.test(part)) {
+						heading.append(part);
+						return;
+					}
+					const word = document.createElement('span');
+					word.className = 'cl-word';
+					word.setAttribute('aria-hidden', 'true');
+					word.style.setProperty('--wd', `${(i / 2) * 0.045}s`);
+					word.textContent = part;
+					heading.append(word);
+				});
+				heading.dataset.reveal = '';
+			});
+
+		const io = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (!entry.isIntersecting) continue;
+					entry.target.classList.add('is-in');
+					io.unobserve(entry.target);
+				}
+			},
+			{ rootMargin: '0px 0px -80px 0px' },
+		);
+		document.querySelectorAll('[data-reveal]').forEach((el) => io.observe(el));
+	}
+
+	// One shared animation loop; it sleeps whenever nothing is still settling.
+	type Tick = () => boolean;
+	const ticks = new Set<Tick>();
+	let loopId = 0;
+	const resetMotion: (() => void)[] = [];
+	const frame = () => {
+		loopId = 0;
+		for (const tick of ticks) if (!tick()) ticks.delete(tick);
+		if (ticks.size) loopId = requestAnimationFrame(frame);
+	};
+	const wake = (tick: Tick) => {
+		if (motionPreference.matches) return;
+		ticks.add(tick);
+		loopId ||= requestAnimationFrame(frame);
+	};
+	motionPreference.addEventListener('change', () => {
+		if (!motionPreference.matches) return;
+		cancelAnimationFrame(loopId);
+		loopId = 0;
+		ticks.clear();
+		root.classList.remove('cl-motion');
+		resetMotion.forEach((reset) => reset());
+	});
+
+	// Hero depth: pointer parallax (fine pointers) + scroll drift.
+	const hero = document.querySelector<HTMLElement>('.lp-hero-field');
+	if (hero) {
+		const target = { x: 0, y: 0, s: 0 };
+		const cur = { x: 0, y: 0, s: 0 };
+		resetMotion.push(() => {
+			Object.assign(target, { x: 0, y: 0, s: 0 });
+			Object.assign(cur, { x: 0, y: 0, s: 0 });
+			['--px', '--py', '--sy'].forEach((name) => hero.style.removeProperty(name));
+		});
+		const tick: Tick = () => {
+			cur.x = lerp(cur.x, target.x, 0.06);
+			cur.y = lerp(cur.y, target.y, 0.06);
+			cur.s = lerp(cur.s, target.s, 0.12);
+			hero.style.setProperty('--px', cur.x.toFixed(4));
+			hero.style.setProperty('--py', cur.y.toFixed(4));
+			hero.style.setProperty('--sy', cur.s.toFixed(4));
+			return Math.abs(cur.x - target.x) + Math.abs(cur.y - target.y) + Math.abs(cur.s - target.s) > 0.0005;
+		};
+		if (finePointer) {
+			hero.addEventListener('pointermove', (e) => {
+				if (motionPreference.matches) return;
+				const r = hero.getBoundingClientRect();
+				target.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+				target.y = ((e.clientY - r.top) / r.height) * 2 - 1;
+				wake(tick);
+			});
+			hero.addEventListener('pointerleave', () => {
+				target.x = 0;
+				target.y = 0;
+				wake(tick);
+			});
+		}
+		const onScroll = () => {
+			if (motionPreference.matches) return;
+			const r = hero.getBoundingClientRect();
+			target.s = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height)));
+			wake(tick);
+		};
+		addEventListener('scroll', onScroll, { passive: true });
+		onScroll();
+	}
+
+	// Cards: the hover glow drifts along the bottom edge under the cursor
+	// (CSS eases `left`, so raw pointer positions are enough).
+	if (finePointer) {
+		document.querySelectorAll<HTMLElement>('.lp-cell').forEach((card) => {
+			resetMotion.push(() => card.style.removeProperty('--mx'));
+			card.addEventListener('pointermove', (e) => {
+				if (motionPreference.matches) return;
+				const r = card.getBoundingClientRect();
+				card.style.setProperty('--mx', `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
+			});
+			card.addEventListener('pointerleave', () => card.style.removeProperty('--mx'));
+		});
+
+		// Magnetic CTAs drift a few pixels toward the cursor.
+		document.querySelectorAll<HTMLElement>('.lp-btn-primary, .lp-btn-ghost, .lp-github-cta').forEach((btn) => {
+			const target = { x: 0, y: 0 };
+			const cur = { x: 0, y: 0 };
+			resetMotion.push(() => {
+				Object.assign(target, { x: 0, y: 0 });
+				Object.assign(cur, { x: 0, y: 0 });
+				btn.style.removeProperty('--mgx');
+				btn.style.removeProperty('--mgy');
+			});
+			const tick: Tick = () => {
+				cur.x = lerp(cur.x, target.x, 0.18);
+				cur.y = lerp(cur.y, target.y, 0.18);
+				btn.style.setProperty('--mgx', `${cur.x.toFixed(2)}px`);
+				btn.style.setProperty('--mgy', `${cur.y.toFixed(2)}px`);
+				return Math.abs(cur.x - target.x) + Math.abs(cur.y - target.y) > 0.05;
+			};
+			btn.addEventListener('pointermove', (e) => {
+				if (motionPreference.matches) return;
+				const r = btn.getBoundingClientRect();
+				target.x = (e.clientX - (r.left + r.width / 2)) * 0.18;
+				target.y = (e.clientY - (r.top + r.height / 2)) * 0.3;
+				wake(tick);
+			});
+			btn.addEventListener('pointerleave', () => {
+				target.x = 0;
+				target.y = 0;
+				wake(tick);
+			});
+		});
+	}
+
+	// Hero word roll. The CSS drum sizes its slot to the widest word, so the
+	// shorter word left a gap or crowded the particle after it (worst in
+	// Korean: "Codex를"). Here the slot takes each word's measured width and
+	// eases between them while the words roll through a blur.
+	const drum = document.querySelector<HTMLElement>('.lp-drum');
+	if (drum) {
+		const faces = Array.from(drum.querySelectorAll<HTMLElement>('.lp-drum-spin .lp-drum-face')).slice(0, 2);
+		const roll = document.createElement('span');
+		roll.className = 'lp-roll';
+		roll.setAttribute('aria-hidden', 'true');
+		const words = faces.map((face, i) => {
+			const word = document.createElement('span');
+			word.className = `lp-roll-word ${face.className.replace('lp-drum-face', '').trim()}`;
+			word.textContent = face.textContent;
+			if (i === 0) word.classList.add('is-on');
+			roll.append(word);
+			return word;
+		});
+		drum.querySelector('.lp-drum-spin')?.replaceWith(roll);
+		drum.classList.add('lp-drum-js');
+		let index = 0;
+		const fit = () => {
+			if (motionPreference.matches) return;
+			roll.style.width = `${words[index].getBoundingClientRect().width}px`;
+		};
+		// fonts swap in late; measure again once they have
+		fit();
+		document.fonts?.ready.then(fit);
+		addEventListener('resize', fit, { passive: true });
+		const HOLD_MS = 2600;
+		let timer: ReturnType<typeof setInterval> | undefined;
+		let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+		const advance = () => {
+			if (document.hidden) return;
+			const prev = words[index];
+			index = (index + 1) % words.length;
+			const next = words[index];
+			prev.classList.remove('is-on');
+			prev.classList.add('is-out');
+			next.classList.remove('is-out');
+			next.classList.add('is-on');
+			fit();
+			cleanupTimer = setTimeout(() => prev.classList.remove('is-out'), 700);
+		};
+		const syncMotion = () => {
+			clearInterval(timer);
+			clearTimeout(cleanupTimer);
+			timer = undefined;
+			words.forEach((word) => word.classList.remove('is-out'));
+			if (!motionPreference.matches) {
+				fit();
+				timer = setInterval(advance, HOLD_MS);
+			}
+		};
+		motionPreference.addEventListener('change', syncMotion);
+		syncMotion();
+	}
+
+	// The star total counts up once the closing panel comes into view, using
+	// the same compact format the build renders (src/data/github-stars.ts).
+	const stars = document.querySelector<HTMLElement>('.lp-github-cta [data-gh-stars]');
+	const total = Number(stars?.dataset.ghStars);
+	if (stars && Number.isFinite(total) && total > 0 && !reduceMotion) {
+		const trim = (n: number) => String(n).replace(/\.0$/, '');
+		const format = (n: number) =>
+			n < 1000 ? String(n)
+			: n < 100_000 ? `${trim(Math.floor(n / 100) / 10)}k`
+			: n < 1_000_000 ? `${Math.floor(n / 1000)}k`
+			: `${trim(Math.floor(n / 100_000) / 10)}m`;
+		const final = stars.textContent;
+		let starFrame = 0;
+		const starObserver = new IntersectionObserver((entries, obs) => {
+			if (!entries.some((e) => e.isIntersecting)) return;
+			obs.disconnect();
+			if (motionPreference.matches) return;
+			const start = performance.now();
+			const DURATION = 1600;
+			const step = (now: number) => {
+				const t = Math.min(1, (now - start) / DURATION);
+				const eased = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+				stars.textContent = t === 1 ? final : format(Math.round(total * eased));
+				if (t < 1) starFrame = requestAnimationFrame(step);
+			};
+			starFrame = requestAnimationFrame(step);
+		}, { threshold: 0.6 });
+		starObserver.observe(stars);
+		resetMotion.push(() => {
+			starObserver.disconnect();
+			cancelAnimationFrame(starFrame);
+			stars.textContent = final;
+		});
+	}
+</script>
+
+<script>
 	// Frame-sequence scrub (motion.md): the demo capture plays through as the
-	// scrub scene scrolls. Short-circuits under reduced motion / small screens
-	// (the animated poster stays); progressive checkpoint loading.
+	// scrub scene scrolls. The poster remains until a frame is ready, and when
+	// motion, viewport or scroll-timeline support makes the scrub unavailable.
 	const canvas = document.querySelector<HTMLCanvasElement>('.lp-scrub-canvas');
 	const section = document.querySelector<HTMLElement>('.lp-scene-scrub');
 	const poster = document.querySelector<HTMLImageElement>('.lp-scrub-poster');
-	const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-	const wide = matchMedia('(min-width: 48rem)').matches;
-	if (canvas && section && poster && !reduce && wide) {
+	const motionViewport = matchMedia('(prefers-reduced-motion: no-preference) and (min-width: 48rem)');
+	if (canvas && section && poster) {
 		const ctx = canvas.getContext('2d');
 		const count = Number(canvas.dataset.count || '0');
 		const base = canvas.dataset.base || '/';
@@ -389,6 +693,8 @@ const docsMap = [
 		let started = false;
 		let current = -1;
 		let raf = 0;
+		let generation = 0;
+		let enabled = motionViewport.matches && CSS.supports('animation-timeline: view()');
 		const load = (i: number) =>
 			new Promise<void>((resolve) => {
 				if (frames[i]) return resolve();
@@ -405,6 +711,7 @@ const docsMap = [
 			return -1;
 		};
 		const draw = (i: number) => {
+			if (!enabled) return;
 			const j = nearestLoaded(Math.max(0, Math.min(count - 1, i)));
 			if (j < 0 || j === current || !ctx) return;
 			current = j;
@@ -420,6 +727,7 @@ const docsMap = [
 		};
 		const update = () => {
 			raf = 0;
+			if (!enabled || !section.hasAttribute('data-scrub-active')) return;
 			const rect = section.getBoundingClientRect();
 			const travel = section.offsetHeight - innerHeight;
 			if (travel <= 0) return;
@@ -427,28 +735,49 @@ const docsMap = [
 			draw(Math.round(progress * (count - 1)));
 		};
 		const start = async () => {
-			if (started) return;
+			if (started || !enabled) return;
 			started = true;
+			const run = generation;
 			await load(0);
-			draw(0);
+			if (run !== generation || !enabled || !frames[0] || !ctx) return;
 			// checkpoints first, then fill in idle time
 			const checkpoints = [count - 1, Math.floor(count / 2), Math.floor(count / 4), Math.floor((3 * count) / 4)];
 			await Promise.all(checkpoints.map(load));
+			if (run !== generation || !enabled || !checkpoints.some((i) => i > 0 && frames[i])) return;
+			draw(0);
+			section.setAttribute('data-scrub-active', '');
 			update();
 			const fill = (i: number) => {
-				if (i >= count) return;
+				if (run !== generation || !enabled || i >= count) return;
 				load(i).then(() => {
 					const next = () => fill(i + 1);
 					'requestIdleCallback' in window ? requestIdleCallback(next) : setTimeout(next);
 				});
 			};
 			fill(0);
-			addEventListener('scroll', () => { raf ||= requestAnimationFrame(update); }, { passive: true });
-			addEventListener('resize', () => { raf ||= requestAnimationFrame(update); }, { passive: true });
 		};
-		new IntersectionObserver((entries, obs) => {
+		const observer = new IntersectionObserver((entries, obs) => {
 			if (entries.some((e) => e.isIntersecting)) { obs.disconnect(); start(); }
-		}, { rootMargin: '100% 0px' }).observe(section);
+		}, { rootMargin: '100% 0px' });
+		const reconcile = () => {
+			generation++;
+			observer.disconnect();
+			cancelAnimationFrame(raf);
+			raf = 0;
+			started = false;
+			current = -1;
+			section.removeAttribute('data-scrub-active');
+			canvas.style.display = 'none';
+			poster.style.display = '';
+			if (enabled) observer.observe(section);
+		};
+		motionViewport.addEventListener('change', (event) => {
+			enabled = event.matches && CSS.supports('animation-timeline: view()');
+			reconcile();
+		});
+		addEventListener('scroll', () => { if (enabled) raf ||= requestAnimationFrame(update); }, { passive: true });
+		addEventListener('resize', () => { if (enabled) raf ||= requestAnimationFrame(update); }, { passive: true });
+		reconcile();
 	}
 </script>
 

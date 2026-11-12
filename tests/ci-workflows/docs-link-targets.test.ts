@@ -108,15 +108,17 @@ async function loadIntegration(): Promise<InternalLinks> {
 describe("docs link targets", () => {
   test("CI selects hard-coded URL checks for README, skills, and issue-template edits", () => {
     const workflow = Bun.YAML.parse(readFileSync(repoPath(".github/workflows/ci.yml"), "utf8")) as {
-      on?: { push?: { paths?: string[] } };
+      on?: { push?: unknown; pull_request?: unknown; workflow_dispatch?: unknown };
       jobs?: { changes?: { steps?: Array<{ uses?: string; with?: { filters?: string } }> } };
     };
     const filter = workflow.jobs?.changes?.steps?.find(step => step.uses?.startsWith("dorny/paths-filter@"));
     const ciPaths = (Bun.YAML.parse(filter?.with?.filters ?? "") as { ci?: string[] }).ci ?? [];
     for (const path of ["readme/**", "skills/**", ".github/ISSUE_TEMPLATE/**"]) {
       expect(ciPaths).toContain(path);
-      expect(workflow.on?.push?.paths).toContain(path);
     }
+    expect(workflow.on?.pull_request).toBeDefined();
+    expect(workflow.on?.workflow_dispatch).toBeDefined();
+    expect(workflow.on?.push).toBeUndefined();
   });
 
   test("every hard-coded docs URL names a page the site builds", () => {
@@ -198,5 +200,14 @@ describe("docs link targets", () => {
     const config = readFileSync(repoPath("docs-site/astro.config.mjs"), "utf8");
     expect(config).toContain('from "./src/integrations/internal-links.mjs"');
     expect(config).toMatch(/internalLinks\(\)/);
+  });
+
+  test("fork privacy statement does not promise removed telemetry", () => {
+    const readme = readFileSync(repoPath("README.md"), "utf8");
+    const policy = readFileSync(repoPath("docs-site/src/content/docs/reference/code-signing.md"), "utf8");
+    expect(readme).toContain("This fork does not send upstream anonymous usage telemetry");
+    expect(policy).toContain("This fork does not send upstream anonymous usage telemetry");
+    expect(readme).not.toContain("telemetry.opencodex.me");
+    expect(policy).not.toContain("telemetry.opencodex.me");
   });
 });

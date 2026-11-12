@@ -7,4 +7,5 @@ test("English is the sole dashboard locale and catalog", async () => {
   const catalogs = files.filter(file => /^[a-z]{2}(?:-[A-Z]{2})?\.ts$/.test(file) && file !== "en.ts");
   expect(LOCALES).toEqual([{ code: "en", htmlLang: "en" }]);
   expect(catalogs).toEqual([]);
+
 });

@@ -1,6 +1,7 @@
 import { observeAccountAutoPauseRevisions, snapshotAutoPauseFingerprints } from "./account-auto-pause-revisions";
 import type { OcxConfig, OcxProviderConfig, ProviderCostOverlay } from "../types";
 import { configReasoningPinsConfigError } from "./provider-validation";
+import { carryPersistedTelemetry } from "./telemetry-carry";
 import { adoptCustomModelCatalogMigration, projectCustomModelCatalogMigration } from "../codex/custom-model-catalog-migration";
 import { refreshPreservedProviderOwner } from "../usage/user-cost-overlays";
 import { refreshConfigDerivedRegistries } from "./derived-registries";
@@ -98,7 +99,8 @@ function applyModelCostRowReplacement(config: OcxConfig): void {
  */
 export function adoptPersistedModelDiscovery(
   config: OcxConfig,
-  persisted: Pick<OcxConfig, "modelDiscovery" | "disabledModels">,
+  persisted: Pick<OcxConfig, "modelDiscovery" | "disabledModels">
+    & { selectedModels?: Record<string, string[] | undefined> },
 ): void {
   config.modelDiscovery = structuredClone(persisted.modelDiscovery);
   config.disabledModels = structuredClone(persisted.disabledModels);
@@ -107,6 +109,27 @@ export function adoptPersistedModelDiscovery(
     baseline.modelDiscovery = structuredClone(persisted.modelDiscovery);
     baseline.disabledModels = structuredClone(persisted.disabledModels);
   }
+  // `admit` (#8236) widens a provider's committed selection. Move live and baseline together so
+  // the running catalog shows the arrival and a later save does not read the old list as an edit.
+  for (const [name, selected] of Object.entries(persisted.selectedModels ?? {})) {
+    const live = config.providers[name];
+    if (live) live.selectedModels = structuredClone(selected);
+    const base = baseline?.providers[name];
+    if (base) base.selectedModels = structuredClone(selected);
+  }
+}
+
+/** Adopt the committed telemetry consent subtree without advancing unrelated pending live intent. */
+export function adoptPersistedTelemetry(config: OcxConfig, persisted: OcxConfig["telemetry"]): void {
+  if (persisted === undefined) delete config.telemetry;
+  else config.telemetry = structuredClone(persisted);
+  const baseline = liveConfigBaseline.get(config);
+  if (baseline) {
+    if (persisted === undefined) delete baseline.telemetry;
+    else baseline.telemetry = structuredClone(persisted);
+  }
+  clearConfigTopLevelDeletionIntent(config, ["telemetry"]);
+  if (baseline) clearConfigTopLevelDeletionIntent(baseline, ["telemetry"]);
 }
 
 /**
@@ -614,6 +637,9 @@ export function saveConfigPreservingClaudeCode(config: OcxConfig): void {
     );
     if (provenanceProjection.configRebaseProvenance === undefined) delete projectedConfig.configRebaseProvenance;
     else projectedConfig.configRebaseProvenance = provenanceProjection.configRebaseProvenance;
+    // Telemetry consent is owned by the file (see carryPersistedTelemetry).
+    const telemetry = carryPersistedTelemetry(projectedConfig, onDisk as Record<string, unknown> | undefined);
+    if (telemetry.carried) adoptPersistedTelemetry(config, telemetry.value);
     const persistedBinding = (bindingBaseline || diskDeletedKeys.has("hostname")) && onDisk
       ? readPersistedServerBinding(onDisk, bindingBaseline ?? { port: config.port, hostname: config.hostname })
       : bindingBaseline;

@@ -30,11 +30,7 @@ SignPath Foundation policy forbids signing them with the project certificate.
 
 ### Privacy
 
-This program will not transfer any information to other networked systems unless specifically
-requested by the user or the person installing or operating it. In practice, OpenCodex forwards
-requests to the providers you configure. To look for new versions it also reads release
-metadata from GitHub and the npm registry, and those checks carry none of your prompts,
-credentials or usage data.
+This fork does not send upstream anonymous usage telemetry. Requests go to the providers and services you configure. Update checks read release metadata from GitHub and the npm registry.
 
 ## Verifying a download
 

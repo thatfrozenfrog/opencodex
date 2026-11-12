@@ -29,4 +29,5 @@ test("dashboard always renders the English catalog and document language", async
   expect(window.localStorage.getItem("ocx-lang")).toBeNull();
   expect(LOCALES).toEqual([{ code: "en", htmlLang: "en" }]);
   cleanup = () => { act(() => root.unmount()); window.happyDOM.abort(); };
+
 });

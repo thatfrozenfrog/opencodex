@@ -1,3 +1,4 @@
+import { clientFacingModelText } from "../../lib/error-destination";
 import { createAnthropicThinkingRecovery } from "./anthropic-thinking-recovery";
 import { rotateAnthropicAccountOnResponseForInstance } from "../../oauth/anthropic-account-refusal";
 import type { ResponsesRequestContext } from "./core-options";
@@ -8,6 +9,7 @@ import type { ResponsesEffects } from "./response-effects";
 import type { ResponsesSendBudget } from "./request-send-budget";
 import { formatErrorResponse } from "../../bridge";
 import { planWebSearch, buildWebSearchTool, runWithWebSearch } from "../../web-search";
+
 import {
   planImageBridge,
   planVideoBridge,
@@ -30,10 +32,10 @@ import {
   failoverAccountSnapshot,
 } from "../../oauth/generic-account-failover";
 import { classifyKiroRefusal } from "../../adapters/kiro-refusal";
-import { isNonReplayableResponse, SendBudgetExhaustedError } from "../../lib/upstream-retry";
+import { isNonReplayableResponse, SendBudgetExhaustedError, errorDestinationLabel } from "../../lib/upstream-retry";
 import { isVerifiedModelNotInPlanResponse, markVerifiedModelNotInPlanResponse } from "../../lib/errors";
 import { unwrapUpstreamRetryEvidenceError } from "../../codex/auth-context";
-import { AdmissionModelDeniedError, admissionModelDeniedResponse } from "../admission-model-scope";
+import { AdmissionModelDeniedError, admissionModelDeniedResponse, projectAdmissionModelDeniedLog } from "../admission-model-scope";
 import { noteKiroMonthlyRefusal, noteKiroServedSuccess } from "../../providers/kiro-usage";
 import { persistKiroAccountState } from "../../providers/kiro-account-state-disk";
 import { anthropicPoolCooldownResponse, readDisplaySafeErrorText } from "./core-errors";
@@ -45,7 +47,7 @@ import {
 } from "../../oauth/anthropic-routing";
 import { resolveWireProtocolOverride } from "../adapter-resolve";
 import { bindRouteReasoningReplayScope, adapterNeedsForcedContinuation, adapterNeedsToolCallContinuation } from "./core-replay";
-import { namespacedToolName } from "../../types";
+import { namespacedToolName, toolChoiceToolPredicate } from "../../types";
 import { providerFetch } from "./fetch-helpers";
 import type { AttemptRecoveryKind } from "../../usage/log";
 import { recordAdapterReasoning, recordAdapterTier } from "../request-log";
@@ -101,7 +103,7 @@ export async function executeResponsesSidecars(
     | "notifyResponseComplete"
     | "cancelResponseCompletion"
   >,
-  sendBudgetState: Pick<ResponsesSendBudget, "sendBudgetExhausted" | "reserveCredentialHop" | "refundableAdapterDispatchBudget" | "adapterDispatchBudget" | "noteInitialDispatch" | "noteAdapterPhysicalSend" | "noteAdapterRecoveryWithheld" | "pendingHopPermit">,
+  sendBudgetState: Pick<ResponsesSendBudget, "sendBudgetExhausted" | "reserveCredentialHop" | "refundableAdapterDispatchBudget" | "adapterDispatchBudget" | "noteInitialDispatch" | "noteAdapterPhysicalSend" | "noteAdapterRecoveryWithheld" | "pendingHopPermit" | "dispatchSidecarSend">,
 ) {
   const { config, options, logCtx } = requestContext;
   const antigravityPoolActivated = requestState.route.providerName === "google-antigravity"
@@ -178,6 +180,7 @@ export async function executeResponsesSidecars(
     }
   }
 
+
   // Image / web-search sidecars: plan once, then dispatch with runTurn-aware priority.
   // Routed-compaction turns must NOT hit the image bridge: compaction disables tool execution but
   // leaves _imageGeneration, so planImageBridge would activate and return a normal Responses
@@ -221,7 +224,7 @@ export async function executeResponsesSidecars(
     if (!sidecarScopeDenial || response.ok) return undefined;
     void response.body?.cancel().catch(() => {});
     releaseSearchProbeLease();
-    return admissionModelDeniedResponse(sidecarScopeDenial);
+    return admissionModelDeniedResponse(projectAdmissionModelDeniedLog(sidecarScopeDenial, logCtx));
   };
   /** Admit a replacement credential, or leave the loop's original refusal authoritative. */
   const rotateSidecarProviderOn429 = async (
@@ -445,7 +448,7 @@ export async function executeResponsesSidecars(
     options.abortSignal ?? new AbortController().signal, { attempted: false },
     () => !sendBudgetState.sendBudgetExhausted()
       && !!sendBudgetState.adapterDispatchBudget
-      && sendBudgetState.adapterDispatchBudget.spendEnforced !== true);
+      && sendBudgetState.adapterDispatchBudget.spendEnforced !== true, logCtx);
   const thinkingReceipt = (request: AdapterRequest, adapter: ProviderAdapter, recovery?: AttemptRecoveryKind) =>
     adapter.name === "anthropic" ? { onPhysicalDispatch: () => {
       if (recovery === "opaque-blob-rejection") {
@@ -454,7 +457,7 @@ export async function executeResponsesSidecars(
         });
         if (sendBudgetState.adapterDispatchBudget?.spendEnforced || !decision?.allowed) {
           if (decision?.allowed) decision.permit.release();
-          throw new SendBudgetExhaustedError("sidecar thinking recovery");
+          throw new SendBudgetExhaustedError(errorDestinationLabel(request.url));
         }
         try { sendBudgetState.noteInitialDispatch(decision.permit); }
         finally { decision.permit.release(); }
@@ -546,7 +549,7 @@ export async function executeResponsesSidecars(
       abortSignal: options.abortSignal,
       maxRounds: clampImageMaxRounds(bridgeMaxRounds),
       connectTimeoutMs: config.connectTimeoutMs ?? 200_000,
-      stallTimeoutSec: config.stallTimeoutSec,
+      stallTimeoutSec: config.stallTimeoutSec, proxyErrorContext: logCtx,
       waitForRequestSlot: imageProviderFetch.waitForPacing,
       fetchImpl: imageProviderFetch.unpacedFetch ?? imageProviderFetch,
       fetchForRequest: (request, iterParsed, adapter, recovery) => {
@@ -577,6 +580,7 @@ export async function executeResponsesSidecars(
       onFirstOutput: noteSidecarOutput,
       ...(options.forceEmptyResponseId ? { forceEmptyResponseId: true } : {}),
       terminalRefusalAsFailed: inboundWire !== "chat" && inboundWire !== "anthropic",
+      escapeMemoryCitationTags: inboundWire !== "chat" && inboundWire !== "anthropic",
       onCompletedResponse: (response, providerState) => {
         if (!options.abortSignal?.aborted) thinkingRecovery.rememberSuccess(response);
         const served = transportState.replayOAuthCredentialSnapshot;
@@ -600,7 +604,7 @@ export async function executeResponsesSidecars(
     if (imgScopeRefusal) return imgScopeRefusal;
     // A provider overflow on the first iteration answers as the main path's context failure (#7316).
     const imgResponse = options.comboAttempt ? imgLoopResponse : sidecarContextOverflowResponse(imgLoopResponse, {
-      stream: parsed.stream, modelId: parsed._responseModelId ?? parsed.modelId, translatorBudget,
+      stream: parsed.stream, modelId: clientFacingModelText(options.clientModelLabel), translatorBudget,
     });
     if (imgResponse.body) {
       const imgTurnAc = new AbortController();
@@ -628,6 +632,7 @@ export async function executeResponsesSidecars(
   // through web-search instead of being swallowed. runTurn adapters never enter this branch.
   if (canRunWebSearch && wsPlan) {
     parsed.context.tools = [...(parsed.context.tools ?? []), buildWebSearchTool()];
+
     // Resolve the mutable route at send time: a 429 rotation replaces route.provider, so retaining
     // one pre-rotation providerFetch would keep the old credential and transport pin.
     const routedProviderFetch = ((input: Parameters<typeof globalThis.fetch>[0], init?: RequestInit) =>
@@ -637,6 +642,7 @@ export async function executeResponsesSidecars(
         ...sidecarBudget.fetchOptions(transportState.adapter),
       })(input, init)) as typeof globalThis.fetch;
     const loopResponse = await runWithWebSearch({
+      dispatchSidecarSend: sendBudgetState.dispatchSidecarSend,
       parsed, adapter: transportState.adapter,
       chatRawReasoningVisible: options.chatRawReasoningVisible,
       ...(transportState.adapter.name === "anthropic" ? { thinkingRecovery } : {}),
@@ -673,6 +679,7 @@ export async function executeResponsesSidecars(
       maxSearches: wsPlan.maxSearches,
       forceEmptyResponseId: true,
       terminalRefusalAsFailed: inboundWire !== "chat" && inboundWire !== "anthropic",
+      escapeMemoryCitationTags: inboundWire !== "chat" && inboundWire !== "anthropic",
       abortSignal: options.abortSignal,
       onFirstOutput: noteSidecarOutput,
       onRequestBuilt: request => {
@@ -689,7 +696,7 @@ export async function executeResponsesSidecars(
       beforeSidecarDispatch: wsPlan.forwardSidecar?.beforeDispatch,
       connectTimeoutMs: config.connectTimeoutMs ?? 200_000,
       routedModelStallTimeoutMs: wsPlan.routedModelStallTimeoutMs,
-      stallTimeoutSec: wsPlan.stallTimeoutSec,
+      stallTimeoutSec: wsPlan.stallTimeoutSec, proxyErrorContext: logCtx,
       streamRoutedModelOutput: wsPlan.streamRoutedModelOutput,
       on429: rotateSidecarProviderOn429,
       onRotatedUsage: billRotatedUsage,
@@ -722,11 +729,12 @@ export async function executeResponsesSidecars(
       : null;
     if (poolUsageLimit) void loopResponse.body?.cancel().catch(() => {});
     // A provider overflow on the first iteration answers as the main path's context failure (#7316).
-    let wsResponse = loopResponse;
-    if (poolUsageLimit) wsResponse = anthropicPoolCooldownResponse(poolUsageLimit, { logCtx });
-    else if (options.comboAttempt !== true) wsResponse = sidecarContextOverflowResponse(loopResponse, {
-      stream: parsed.stream, modelId: parsed._responseModelId ?? parsed.modelId, translatorBudget,
-    });
+    const wsResponse = poolUsageLimit ? anthropicPoolCooldownResponse(poolUsageLimit, { logCtx })
+      : options.comboAttempt ? loopResponse
+        : sidecarContextOverflowResponse(loopResponse, {
+          stream: parsed.stream, modelId: clientFacingModelText(options.clientModelLabel), translatorBudget,
+        });
+
     // Register the sidecar stream as an active turn so drainAndShutdown waits for (or aborts)
     // in-flight web-search turns instead of skipping them during graceful shutdown.
     if (wsResponse.body) {
@@ -742,6 +750,7 @@ export async function executeResponsesSidecars(
     releaseSearchProbeLease();
     return wsResponse;
   }
+
 
   return undefined;
 }

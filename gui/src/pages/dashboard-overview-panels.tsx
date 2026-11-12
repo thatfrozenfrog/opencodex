@@ -13,7 +13,7 @@ import {
 
 type Dash = ReturnType<typeof useDashboardData>;
 
-export function DashboardOverviewPanels(props: Dash) {
+export function DashboardOverviewPanels(props: Dash & { readOnly?: boolean }) {
   return (
     <>
       <DashboardEffortCapPanel apiBase={props.apiBase} d={props} />

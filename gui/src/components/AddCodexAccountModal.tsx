@@ -10,9 +10,12 @@ import { useAddCodexAccountOAuth } from "./use-add-codex-account-oauth";
 import type { CodexAccountMutationCompletion } from "../codex-account-mutation";
 
 export default function AddCodexAccountModal({
-  apiBase, onClose, onAdded, reauthAccountId, onOpenBulkImport,
+  apiBase, targetKey, onClose, onAdded, reauthAccountId, onOpenBulkImport,
+
 }: {
   apiBase: string;
+  /** Logical dashboard target; the OAuth flow belongs to it. */
+  targetKey?: string;
   onClose: () => void;
   onAdded: (completion: CodexAccountMutationCompletion) => void;
   reauthAccountId?: string;
@@ -23,7 +26,7 @@ export default function AddCodexAccountModal({
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  const oauth = useAddCodexAccountOAuth({ apiBase, reauthAccountId, ui, dispatch, t });
+  const oauth = useAddCodexAccountOAuth({ apiBase, targetKey, reauthAccountId, ui, dispatch, t });
   const { manualCodeBusy, manualCodeWaiting, bindCallbacks, closeModal, startOAuth, submitManualCode } = oauth;
 
   useEffect(() => {

@@ -17,6 +17,7 @@ import { markSidecarContextOverflow, sidecarLoopTerminalEvent, upstreamErrorCode
 import { markVerifiedModelNotInPlanResponse, MODEL_NOT_IN_PLAN_CODE, verifiedPlanRefusalMessage } from "../lib/errors";
 import { runWebSearch, type SidecarOutcome, type SidecarOutcomeRecorder, type SidecarSettings } from "./executor";
 import { runAnthropicWebSearch } from "./anthropic-executor";
+import type { AuxiliaryModelSend } from "../lib/request-execution-budget";
 import { runXaiWebSearch, type XaiSearchOptions } from "./xai-executor";
 import { runGeminiWebSearch } from "./gemini-executor";
 import { runExaWebSearch } from "./exa-executor";
@@ -33,7 +34,7 @@ import {
   TranslatorBudgetExceededError,
 } from "../lib/translator-budget";
 import { formatWebSearchResults } from "./format-result";
-import { parseStreamWithProgress, RoutedModelInactivityError, WebSearchStreamProtocolError, WebSearchAdapterEventError } from "./progress-stream";
+import { parseStreamWithProgress, RoutedModelInactivityError, WebSearchConsumerInactivityError, WebSearchStreamProtocolError, WebSearchAdapterEventError } from "./progress-stream";
 import { WEB_SEARCH_TOOL_NAME } from "./synthetic-tool";
 import { newSidecarSearchCellId, rememberSidecarSearch, restoreSidecarSearchResults } from "./sidecar-search-replay";
 
@@ -83,6 +84,7 @@ function parseQueries(argsBuf: string): string[] {
  * is preserved in order.
  */
 export function scanEventsForWebSearch(events: AdapterEvent[]): {
+
   calls: WebSearchCall[];
   passthrough: AdapterEvent[];
   hasRealToolCall: boolean;
@@ -92,6 +94,7 @@ export function scanEventsForWebSearch(events: AdapterEvent[]): {
   const passthrough: AdapterEvent[] = [];
   let hasRealToolCall = false;
   let hasMalformedToolCall = false;
+  let refusal: Extract<AdapterEvent, { type: "error" }> | undefined;
   let pending: { name: string; id: string; argsBuf: string; closed: boolean; events: AdapterEvent[]; providerMetadata?: OcxProviderOpaqueToolCallMetadata } | null = null;
   const isBlank = (value: string): boolean => value.trim().length === 0;
   const flushPending = (): void => {
@@ -104,22 +107,23 @@ export function scanEventsForWebSearch(events: AdapterEvent[]): {
     pending = null;
   };
   for (const e of events) {
+    if (refusal) {
+      if ((e.type === "done" || e.type === "incomplete" || e.type === "error") && e.usage) refusal.usage = e.usage;
+      continue;
+    }
     if (e.type === "tool_call_start") {
       flushPending();
       if (isBlank(e.id) || isBlank(e.name)) hasMalformedToolCall = true;
       pending = { name: e.name, id: e.id, argsBuf: "", closed: false, events: [e], providerMetadata: e.providerMetadata };
     } else if (e.type === "tool_call_delta") {
       // Orphan delta (no open call) is malformed.
-      if (!pending) hasMalformedToolCall = true;
-      else {
+      if (pending) {
         pending.argsBuf += e.arguments;
         pending.events.push(e);
-      }
+      } else hasMalformedToolCall = true;
     } else if (e.type === "tool_call_end") {
       // Orphan end (no open call) is malformed.
-      if (!pending) {
-        hasMalformedToolCall = true;
-      } else {
+      if (pending) {
         pending.events.push(e);
         pending.closed = true;
         if (e.incomplete) {
@@ -132,7 +136,7 @@ export function scanEventsForWebSearch(events: AdapterEvent[]): {
           if (!isBlank(pending.id) && !isBlank(pending.name)) hasRealToolCall = true;
         }
         pending = null;
-      }
+      } else hasMalformedToolCall = true;
     } else {
       passthrough.push(e);
     }
@@ -326,6 +330,7 @@ export interface WebSearchLoopDeps {
   forwardProvider?: OcxProviderConfig;
   /** Required for the anthropic backend: the stored-OAuth provider that runs web_search_20250305. */
   anthropicSidecar?: { providerName: string; provider: OcxProviderConfig; config: OcxConfig };
+  dispatchSidecarSend?: AuxiliaryModelSend;
   /** Required for the xai backend: the stored Grok OAuth provider (L7). */
   xaiSidecar?: { providerName: string; provider: OcxProviderConfig };
   /** Required for the gemini backend: the stored Antigravity CCA provider (L8). */
@@ -341,6 +346,8 @@ export interface WebSearchLoopDeps {
   forceEmptyResponseId?: boolean;
   /** Responses inbound only: deliver a non-retryable upstream refusal as `response.failed`. */
   terminalRefusalAsFailed?: boolean;
+  /** False for Chat/Messages inbound: their clients never parse `<oai-mem-citation>`, so text stays raw. */
+  escapeMemoryCitationTags?: boolean;
   abortSignal?: AbortSignal;
   recordSidecarOutcome?: SidecarOutcomeRecorder;
   beforeSidecarDispatch?: () => void;
@@ -364,6 +371,7 @@ export interface WebSearchLoopDeps {
   onFirstOutput?: () => void;
   /** Raw adapter usage at the terminal event, pre wire-normalization (see bridgeToResponsesSSE onUsage). */
   onUsage?: (usage: OcxUsage | undefined) => void;
+  proxyErrorContext?: object;
   /**
    * After an `on429` rotation, offered the usage of the hidden iterations the left credential
    * served. Returning true means it was billed to that credential's attempt, so `onUsage` will not
@@ -851,6 +859,7 @@ export async function runWithWebSearch(deps: WebSearchLoopDeps): Promise<Respons
       }
       if (error instanceof LoopError) throw error;
       if (error instanceof RoutedModelInactivityError) throw new LoopError(504, error.message);
+      if (error instanceof WebSearchConsumerInactivityError) throw new LoopError(504, error.message);
       if (error instanceof WebSearchStreamProtocolError) throw new LoopError(502, error.message);
       throw new LoopError(502, `Provider stream error: ${error instanceof Error ? error.message : String(error)}`);
     } finally { releaseCapture(); }
@@ -870,6 +879,7 @@ export async function runWithWebSearch(deps: WebSearchLoopDeps): Promise<Respons
     }
     deps.thinkingRecovery?.observeIteration(events);
     return { ...scanEventsForWebSearch(events), streamedPassthroughCount, events, anthropicReplay };
+
   };
 
   // Execute one model-requested web_search call. The call may batch several queries (native
@@ -914,7 +924,7 @@ export async function runWithWebSearch(deps: WebSearchLoopDeps): Promise<Respons
         // signal would otherwise look like an ordinary degradable failure).
         try {
           if (backend === "anthropic" && anthropicSidecar) {
-            outcome = await runAnthropicWebSearch(query, anthropicSidecar.providerName, anthropicSidecar.provider, settings, signal, anthropicSidecar.config);
+            outcome = await runAnthropicWebSearch(query, anthropicSidecar.providerName, anthropicSidecar.provider, settings, signal, anthropicSidecar.config, deps.dispatchSidecarSend);
           } else if (backend === "xai") {
             // L7: stored Grok OAuth to the pinned api.x.ai Responses endpoint; same
             // never-throws contract and no Codex/OpenAI pool outcome recording (F5 parity).
@@ -1140,9 +1150,11 @@ export async function runWithWebSearch(deps: WebSearchLoopDeps): Promise<Respons
             const message = { role: "assistant" as const,
               content: anthropicSearchAssistantContent(split.events), timestamp: Date.now() };
             const originalCalls = split.anthropicReplay.content.filter(block => block.type === "tool_use");
-            const priorIds = new Set(messages.flatMap(message => message.role === "assistant"
-              ? message.content.filter(part => part.type === "toolCall").map(part => part.id)
-              : message.role === "toolResult" ? [message.toolCallId] : []));
+            const priorIds = new Set(messages.flatMap(message => {
+              if (message.role === "assistant") return message.content.filter(part => part.type === "toolCall").map(part => part.id);
+              if (message.role === "toolResult") return [message.toolCallId];
+              return [];
+            }));
             if (originalCalls.some(block => priorIds.has(block.id as string))) {
               throw new LoopError(502, "Anthropic search replay tool identity changed");
             }
@@ -1181,11 +1193,13 @@ export async function runWithWebSearch(deps: WebSearchLoopDeps): Promise<Respons
               errorType: "rate_limit_error", code: e.code, message: e.message, retryable: false };
             // A later iteration's overflow ends the turn as the main path's terminal
             // context_length_exceeded, so Codex compacts instead of resending (#7316).
-            else yield (e instanceof LoopError ? sidecarLoopTerminalEvent(loopFailure(e)) : undefined)
-              ?? (e instanceof LoopError && e.event ? e.event
-              : e instanceof LoopError && deps.thinkingRecovery
-                ? { type: "error", status: e.status, errorType: "upstream_error", message: e.message }
-                : { type: "error", message: e instanceof Error ? e.message : String(e) });
+            else {
+              const terminal = e instanceof LoopError ? sidecarLoopTerminalEvent(loopFailure(e)) : undefined;
+              if (terminal) yield terminal;
+              else if (e instanceof LoopError && e.event) yield e.event;
+              else if (e instanceof LoopError && deps.thinkingRecovery) yield { type: "error", status: e.status, errorType: "upstream_error", message: e.message };
+              else yield { type: "error", message: e instanceof Error ? e.message : String(e) };
+            }
           }
           return;
         }
@@ -1208,15 +1222,16 @@ export async function runWithWebSearch(deps: WebSearchLoopDeps): Promise<Respons
       internalAbort.abort("client closed responses stream");
     }, undefined,
     {
-      translatorBudget,
+      translatorBudget, proxyErrorContext: deps.proxyErrorContext,
       replayCacheScope: parsed._reasoningReplayScope,
       ...(deps.clientToolCatalogRestriction ? { ...deps.clientToolCatalogRestriction, enforceDeclaredToolNames: false } : {}),
       ...(deps.forceEmptyResponseId ? { responseId: "" } : {}),
       ...(deps.terminalRefusalAsFailed ? { terminalRefusalAsFailed: true } : {}),
+      ...(deps.escapeMemoryCitationTags === false ? { escapeMemoryCitationTags: false } : {}),
       hideThinkingSummary: parsed.options.hideThinkingSummary,
       chatRawReasoningVisible: deps.chatRawReasoningVisible,
       hideRawReasoning: parsed.options.hideRawReasoning,
-      ...(deps.stallTimeoutSec !== undefined ? { stallTimeoutSec: deps.stallTimeoutSec } : {}),
+      ...(deps.stallTimeoutSec === undefined ? {} : { stallTimeoutSec: deps.stallTimeoutSec }),
       ...(deps.onFirstOutput ? { onFirstOutput: deps.onFirstOutput } : {}),
       ...(deps.onUsage ? { onUsage: (usage: OcxUsage | undefined) => deps.onUsage?.(mergeUsage(countersOnly(hiddenUsage), usage)) } : {}),
       ...(deps.onCompletedResponse ? { onCompletedResponse: deps.onCompletedResponse } : {}),

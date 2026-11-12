@@ -22,8 +22,10 @@ import { NAV_GROUPS, groupForPage, visibleGroupPages } from "./nav-groups";
 import { SectionSwitcher } from "./components/SectionSwitcher";
 import { useT, type TKey } from "./i18n/shared";
 import { Notice, ToastNotice, type NoticeTone } from "./ui";
-import { bootstrapApiSession, configureApiTargets, DEVICE_PROOF_CHANGED_EVENT, hasApiSession, hasRememberedDashboardDevice, installApiAuthFetch, logoutApiSession, SESSION_CHANGED_EVENT, SESSION_UNAVAILABLE_EVENT } from "./api";
-import { apiBaseForPlane, discoverApiTargets, isConnectedRuntime, runtimeRoleFromDocument, standaloneApiTargets, type ApiTargets } from "./api-targets";
+import { bootstrapApiSession, configureApiTargets, DEVICE_PROOF_CHANGED_EVENT, hasApiSession, hasRememberedDashboardDevice, installApiAuthFetch, logoutApiSession, SESSION_CHANGED_EVENT, SESSION_UNAVAILABLE_EVENT, TARGET_CHANGED_EVENT } from "./api";
+import { apiBaseForPlane, apiTargetIdentity, ClientStateChangedError, discoverApiTargets, isConnectedRuntime, runtimeRoleFromDocument, standaloneApiTargets, type ApiTargets } from "./api-targets";
+import { createTargetDiscovery } from "./api-target-lifecycle";
+import { machineHealthPath, readManagementHealth } from "./lib/proxy-health";
 import { ConnectPairingForm } from "./connect-pairing";
 import { validateRemoteLinkSession } from "./connect-pairing-transport";
 import { type Page } from "./app-routing";
@@ -82,12 +84,6 @@ export function RemoteWorkspaceRoute({ available, apiBase, hubOrigin, onOpenRemo
   return <RemoteWorkspace apiBase={apiBase} hubOrigin={hubOrigin} />;
 }
 
-function readRuntimeVersion(data: unknown): string | null {
-  if (!data || typeof data !== "object" || !("version" in data)) return null;
-  const version = (data as { version?: unknown }).version;
-  return typeof version === "string" && version.length > 0 ? version : null;
-}
-
 function readStoredTheme(): Theme {
   const t = localStorage.getItem(THEME_KEY);
   return t === "light" || t === "dark" ? t : "system";
@@ -137,7 +133,7 @@ export default function App() {
   // Gating the page on discovery made a plain install show remote-hub loading copy before
   // its own dashboard, for a feature the operator never enabled.
   const [targetsSettled, setTargetsSettled] = useState(() => !isConnectedRuntime());
-  const [targetError, setTargetError] = useState(false);
+  const [targetError, setTargetError] = useState<"unavailable" | "client-state-changed" | null>(null);
   const [sharedSessionReady, setSharedSessionReady] = useState(() => hasApiSession("shared"));
   const [sharedSessionEpoch, setSharedSessionEpoch] = useState(0);
   const [hubPairingOpen, setHubPairingOpen] = useState(false);
@@ -179,26 +175,38 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void discoverApiTargets(API_BASE, controller.signal).then(async next => {
-      configureApiTargets(next);
-      setTargets(next);
-      if (next.connected && !hasApiSession("shared")) {
-        await bootstrapApiSession("shared", controller.signal);
-      }
-      if (controller.signal.aborted) return;
-      setSharedSessionReady(hasApiSession("shared"));
-      setTargetError(false);
-      setTargetsSettled(true);
-    }).catch(() => {
-      if (controller.signal.aborted) return;
-      setTargetError(true);
-      setTargetsSettled(true);
+    const discovery = createTargetDiscovery({
+      initialBase: API_BASE,
+      discover: discoverApiTargets,
+      configure: configureApiTargets,
+      bootstrap: bootstrapApiSession,
+      hasSession: hasApiSession,
+      onTargets: setTargets,
+      onSessionReady: setSharedSessionReady,
+      onError: setTargetError,
+      onSettled: setTargetsSettled,
+      isClientStateChanged: error => error instanceof ClientStateChangedError,
     });
-    return () => controller.abort();
+    void discovery.refresh();
+    const refresh = () => { void discovery.refresh(); };
+    const visibility = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener(SESSION_CHANGED_EVENT, refresh);
+    window.addEventListener(DEVICE_PROOF_CHANGED_EVENT, refresh);
+    window.addEventListener(TARGET_CHANGED_EVENT, refresh);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      discovery.dispose();
+      window.removeEventListener(SESSION_CHANGED_EVENT, refresh);
+      window.removeEventListener(DEVICE_PROOF_CHANGED_EVENT, refresh);
+      window.removeEventListener(TARGET_CHANGED_EVENT, refresh);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", visibility);
+    };
   }, []);
   const machineBase = apiBaseForPlane("machine", targets);
   const sharedBase = apiBaseForPlane("shared", targets);
+  const sharedTarget = apiTargetIdentity(targets);
 
   useEffect(() => {
     if (!sharedSessionReady) return;
@@ -281,19 +289,23 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [actionFeedback, feedbackRevision]);
 
+  // A connected Child's machine plane is its machine listener even before discovery settles
+  // (or when it fails), so the served role counts as well as the discovered targets.
+  const healthPath = machineHealthPath(targets.connected || isConnectedRuntime());
   const healthPoll = useKeyedClientResource(
-    `app-healthz:${machineBase}`,
-    [machineBase, targetsSettled],
-    async (signal) => {
-      const res = await fetch(`${machineBase}/healthz`, { signal });
-      if (!res.ok) return null;
-      return readRuntimeVersion(await res.json());
-    },
+    `app-health:${machineBase}${healthPath}`,
+    [machineBase, healthPath, targetsSettled],
+    signal => readManagementHealth(machineBase, healthPath, signal),
     { pollMs: 30_000, enabled: targetsSettled },
   );
 
   const themeSwitch = <ThemeSwitch theme={theme} onChange={setTheme} />;
-  const displayedVersion: string = healthPoll.data ?? __APP_VERSION__;
+  const displayedVersion: string = healthPoll.data?.version ?? __APP_VERSION__;
+  // The sidebar status follows the health check: a failed or missing health route is "Offline",
+  // never a default "Online". Before the first answer it stays Online, as the page itself
+  // loaded from this proxy.
+
+
 
   const [stopping, setStopping] = useState(false);
 
@@ -610,10 +622,10 @@ export default function App() {
                     setSharedSessionEpoch(epoch => epoch + 1);
                   }} />
                 )}
-                {page === "dashboard" && <Dashboard apiBase={sharedBase} readOnly={targets.link !== undefined} connected={targets.connected}
+                {page === "dashboard" && <Dashboard apiBase={sharedBase} targetKey={sharedTarget.key} readOnly={targets.link !== undefined} connected={targets.connected}
                   authenticationPending={targets.connected && !sharedSessionReady} refreshEpoch={sharedSessionEpoch} />}
                 {page === "startup" && <Startup apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
-                {page === "providers" && <Providers apiBase={sharedBase} />}
+                {page === "providers" && <Providers apiBase={sharedBase} targetKey={sharedTarget.key} targetLabel={sharedTarget.label} />}
                 {page === "models" && <Models key={sharedBase} apiBase={sharedBase} restartEpoch={codexRestartEpoch} connected={targets.connected} catalogSyncedAt={targets.catalogSyncedAt} reportRestart={report} />}
                 {page === "logs" && <Logs apiBase={sharedBase} />}
                 {page === "usage" && <Usage apiBase={sharedBase} connected={targets.connected} apiKeyId={targets.apiKeyId} />}
@@ -622,7 +634,7 @@ export default function App() {
                 {page === "token-saver" && <TokenSaver apiBase={sharedBase} />}
                 {page === "playground" && <Playground key={sharedBase} apiBase={sharedBase} />}
               {page === "remote-workspace" && <RemoteWorkspaceRoute available={remoteWorkspaceAvailable} apiBase={sharedBase} hubOrigin={targets.shared.serverOrigin} onOpenRemoteLink={() => navigateToPage("remote")} />}
-                {page === "codex-set" && <CodexSet apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
+                {page === "codex-set" && <CodexSet apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} targetKey={sharedTarget.key} />}
                 {shellPage === "integrations" && <Integrations apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
               </>
             )}

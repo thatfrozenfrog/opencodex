@@ -115,7 +115,9 @@
         "^aside-profile(?!s-routes)",
         "^cline-(?:client|writer)(?:-|[.])",
         "^opencode-kilo-",
-        "^(?:desktop|pi|prime|remote|sync)-",
+        "^(?:desktop|pi|prime|remote)-",
+        "^sync-(?!fanout(?:-process|-select-restart)?\\.test\\.ts$|link-status\\.test\\.ts$|command-(?:fanout|child-flags)\\.test\\.ts$)",
+
         "^command-code-client(?:-|[.])"
       ]
     },

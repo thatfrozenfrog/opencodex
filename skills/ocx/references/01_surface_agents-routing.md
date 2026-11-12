@@ -8,7 +8,7 @@
 Use these declarations to choose a task, then check its flags and authority before execution.
 Non-mutating probes may still contact providers, consume quota or refresh caches.
 
-Declared capabilities: 59.
+Declared capabilities: 60.
 
 ### `ocx agent request-user-input`
 
@@ -161,6 +161,28 @@ Drives no management route.
 - Requires daemon support for experimental thread/queue/add. Sender context comes from CODEX_THREAD_ID, not an authentication claim.
 - queued means submitted, not processed. unknown must not be replayed; no automatic retry, daemon start or thread resume.
 - Exit 0: queued; 1: not sent; 3: unknown; 64: invalid usage. No Claude transport, native lifecycle mutation or skill installation.
+
+### `ocx message mcp`
+
+Usage: `ocx message mcp --codex <absolute-cli-path> --codex-home <absolute-existing-home> [--allow-reply-read] [--allow-resume --resume-socket <absolute-existing-unix-socket> --resume-permissions <profile-id>]`
+
+Serve MCP tools for stored Codex metadata, queued text, opt-in stored-turn reply reads, bounded waits and guarded existing-server resume preflight.
+
+State-changing: yes. JSON mode: `none`.
+
+Drives no management route.
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--codex` | string | Explicit local Codex CLI executable. |
+| `--codex-home` | string | Explicit existing Codex home; no creation or login. |
+| `--allow-reply-read` | boolean | Explicitly expose stored final-turn text through codex_read_reply and codex_wait_reply; disabled by default. |
+| `--allow-resume` | boolean | Expose existing-thread resume preflight; requires --resume-socket and --resume-permissions. Execution is blocked pending native atomic resume support. |
+| `--resume-socket` | string | Existing trusted local Unix App Server socket; requires --allow-resume, --resume-permissions and matching Codex home. |
+| `--resume-permissions` | string | Host-selected native profile for resume preflight; does not bypass the atomicity refusal or preserve saved permissions automatically. |
+
+- macOS/Linux only. Default queue/read tools need no proxy/control socket; resume uses the explicitly configured existing Unix socket. Starts bounded stdio helpers only when a tool is called; existing sessions/send behavior stays unchanged.
+- Stored threads are not verified live sessions. queued is not processing; unknown is never replayed. --allow-reply-read exposes bounded same-turn final text, not exclusive reply ownership or goal completion. No daemon start, steer, automatic replies or registration. Resume preflight is separate opt-in through a same-home existing Unix server; managed requirements and unavailable profiles refuse. The checked native API cannot enforce unloaded-only resume atomically, so execution is blocked with resume_atomicity_unsupported; no thread/resume is sent.
 
 ### `ocx message enable`
 
@@ -805,7 +827,7 @@ State-changing: no. JSON mode: `payload`.
 
 ### `ocx combo set`
 
-Usage: `ocx combo set <id> [--targets <provider/model[:weight],...> | --targets-file <FILE|->] [--strategy <failover|round-robin|random|least-used|reset-window|jev>] [--sticky <1-100|->] [--cooldown-reprobe <on|off>] [--cooldown-reprobe-interval <ms>] [--effort <low|medium|high|xhigh|max|ultra|->] [--effort-mode <fallback|force|->] [--alias <name|->] [--native-alias [on|off]] [--allow-metered-targets <on|off>] [--display-name <label|->] [--description <text|->] [--decision-provider <provider|-> | --decision-model <route|->] [--decision-timeout <ms|->] [--decision-quota-signals <on|off|->] [--decision-quota-tiers <JSON|->] [--session-pin <duration|->] [--rename-from <id>] [--image-input <auto|disabled>] [--reasoning-effort-mode <strict|adaptive>] [--json]`
+Usage: `ocx combo set <id> [--targets <provider/model[:weight],...> | --targets-file <FILE|->] [--strategy <failover|round-robin|random|least-used|reset-window|jev>] [--sticky <1-100|->] [--cooldown-reprobe <on|off>] [--cooldown-reprobe-interval <ms>] [--effort <low|medium|high|xhigh|max|ultra|->] [--effort-mode <fallback|force|->] [--alias <name|->] [--native-alias [on|off]] [--allow-metered-targets <on|off>] [--display-name <label|->] [--description <text|->] [--decision-provider <provider|-> | --decision-model <route|->] [--decision-timeout <ms|->] [--decision-quota-signals <on|off|->] [--decision-quota-tiers <JSON|->] [--session-pin <duration|->] [--rename-from <id>] [--image-input <auto|disabled>] [--reasoning-effort-mode <strict|adaptive>] [--jev-effort-mode <decide|client>] [--json]`
 
 Create, update or rename a combo.
 
@@ -841,6 +863,7 @@ State-changing: yes. JSON mode: `payload`.
 | `--targets-file` | string | Bounded ordered target JSON array, exclusive with --targets; preserves effort/profile/last-resort metadata. |
 | `--image-input` | string | auto or disabled; explicit auto clears the previous disabled choice. |
 | `--reasoning-effort-mode` | string | strict or adaptive, distinct from --effort-mode fallback/force. |
+| `--jev-effort-mode` | string | JEV wire-effort owner: decide (default) applies the decision effort; client keeps its target and leaves effort to combo policy. |
 
 - create and update are aliases of set. Existing fields are read before writing; --targets replaces targets. Without --strategy an existing combo keeps its stored strategy and JEV policy; a new combo defaults to failover.
 - force overrides valid client effort and may increase cost and latency.

@@ -22,6 +22,7 @@ describe("page polish", () => {
     expect(logs).not.toContain('{t("logs.subtitle")}');
   });
 
+
   test("Combos: search renders only when combos exist", () => {
     expect(combos).toContain("{combos.length > 0 && (\n        <div className=\"cwi-search-row\">");
   });

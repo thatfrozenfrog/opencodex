@@ -26,33 +26,40 @@ test("the sidebar owns every page once in navigation order", async () => {
   // another, and Routing folding into Models is precisely that kind of change.
   expect(NAV_GROUPS.map(group => group.id)).toEqual([
     "dashboard", "connect", "codex-set", "providers", "models", "usage-logs", "remote",
+
   ]);
   expect(Object.fromEntries(NAV_GROUPS.map(group => [group.id, [...group.pages]]))).toEqual({
-    dashboard: ["dashboard"],
-    // Claude is a tab inside the Connect page, owned through `embedded`.
-    connect: ["integrations"],
-    "codex-set": ["codex-set"],
-    providers: ["providers"],
+    // Startup is a Home tab.
+    home: ["home", "startup"],
     models: ["models"],
+
     // Usage leads, so the row opens Usage first.
     "usage-logs": ["usage", "logs", "storage"],
-    // Last row, by request.
+    // Claude is a tab inside the Route page, owned through `embedded`.
+    connect: ["integrations", "setup"],
     remote: ["remote", "remote-workspace"],
+    // Fine-tuning surfaces stay one click away instead of hiding behind the hub.
+    proxy: ["dashboard"],
+    advisor: ["advisor"],
+    advanced: ["advanced"],
   });
   expect(NAV_GROUPS.find(group => group.id === "connect")?.embedded).toEqual(["claude"]);
 
-  // Every routable page except Startup belongs to exactly one row; a page in two rows
-  // would light both up.
+  // Every routable page belongs to exactly one row; a page in two rows would light both up.
   const owned = NAV_GROUPS.flatMap(group => [...group.pages, ...(group.embedded ?? [])]);
   expect(new Set(owned).size).toBe(owned.length);
-  expect(new Set(owned)).toEqual(new Set([...VALID_PAGES].filter(page => page !== "startup")));
-  expect(groupForPage("startup")).toBeNull();
+  expect(new Set(owned)).toEqual(new Set(VALID_PAGES));
+  expect(groupForPage("setup")?.id).toBe("connect");
   expect(groupForPage("storage")?.id).toBe("usage-logs");
+
   expect(groupForPage("claude")?.id).toBe("connect");
   expect(groupForPage("remote-workspace")?.id).toBe("remote");
 
-  // App renders the table rather than a copy of it.
-  expect(src).toContain("NAV_GROUPS.map(");
+  // The sidebar renders the table, one tier at a time, rather than a copy of it.
+  const nav = await Bun.file(new URL("../src/components/sidebar-nav.tsx", import.meta.url)).text();
+  expect(src).toContain("<SidebarNav");
+  expect(nav).toContain("NAV_TIERS.map(");
+  expect(nav).toContain("NAV_GROUPS.filter(group => group.tier === tier)");
   expect(src).not.toContain("const NAV: NavEntry[]");
 });
 

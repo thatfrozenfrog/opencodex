@@ -60,7 +60,6 @@ export type ServerBackgroundLifecycleLease = {
 const owners: LeaseOwner[] = [];
 let processLoops: ProcessLoops | null = null;
 let cleanupInProgress = false;
-
 function setLivePolicyOwner(applyPolicy: PolicyApply | null): void {
   setStorageCleanupPolicyLiveSink(applyPolicy);
   setStorageCleanupPolicyJobLiveApply(applyPolicy);

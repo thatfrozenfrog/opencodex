@@ -20,7 +20,7 @@
   max-width: none;
   width: 100%;
   margin: 0;
-  padding: 0;
+  padding: var(--space-4);
   overflow: hidden;
   container-type: normal;
 }
@@ -54,8 +54,8 @@
   height: auto;
   min-height: 0;
   overflow: hidden;
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
   font-family: var(--font-ui);
@@ -72,7 +72,7 @@
   overflow-y: auto;
   padding: var(--space-4);
   border-inline-end: 1px solid var(--border);
-  background: var(--rail);
+  background: var(--surface);
 }
 
 .playground-main {
@@ -96,7 +96,7 @@
   flex-shrink: 0;
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-soft);
-  background: var(--surface);
+  background: var(--raised);
 }
 
 .playground-transcript {
@@ -175,7 +175,7 @@
   width: min(100%, calc(var(--prose-measure) + var(--space-12)));
   align-self: center;
   padding: var(--space-4) var(--space-6);
-  border-top: 0;
+  border-top: 1px solid var(--border-soft);
   background: var(--surface);
 }
 
@@ -286,7 +286,7 @@
   padding: var(--space-1);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  background: var(--rail);
+  background: transparent;
   color: var(--text);
   text-align: start;
   font-family: var(--font-ui);
@@ -635,6 +635,10 @@
 
   .main:has(.main-inner--playground) {
     height: 100%;
+  }
+
+  .main-inner.main-inner--playground {
+    padding: var(--space-2);
   }
 
   .playground-history-backdrop {

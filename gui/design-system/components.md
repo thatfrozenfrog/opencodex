@@ -18,8 +18,9 @@
 Playground history uses a contained title row with a separate disclosure button. Rename and delete
 actions expand vertically below that row, never inline beside the title. Titles truncate without
 shrinking the action target; mobile controls retain the shared touch size. The workspace uses
-semantic surface tokens and short entrance transitions, with reduced-motion overrides. No shared
-tokens are changed by this page-specific treatment.
+semantic surface tokens and short entrance transitions, with reduced-motion overrides. The workspace
+uses the dashboard's bordered, rounded surface, raised toolbar and inset page spacing; mobile retains
+compact outer spacing. No shared tokens are changed by this page-specific treatment.
 
 ## Buttons
 
@@ -71,6 +72,8 @@ tokens are changed by this page-specific treatment.
 
 - 버튼형: `ui.tsx`의 `Switch`, `.switch`, `.knob`
 - label/input형: `.toggle`, `.slider`
+
+`Switch`의 이진 상태는 `role="switch"`와 `aria-checked`로 제공한다. 일부만 선택된 상태를 표현할 수 있는 일괄 제어는 세 상태 모두 토글 버튼의 `aria-pressed`를 유지한다.
 
 켜짐은 `--toggle-on-bg`, 꺼짐은 `--toggle-off-bg`, 핸들은 `--toggle-dot-color`를 사용한다.
 다크 모드 활성 상태는 녹색 트랙과 짙은 핸들로 분리한다. 화면별 토글 색상 override는 금지한다.

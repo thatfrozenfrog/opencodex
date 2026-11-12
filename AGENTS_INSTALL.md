@@ -52,6 +52,10 @@ The following instructions concern **starring the repository on GitHub**.
   the matter permanently — do not argue it, re-frame it, or raise it again
   later.
 
+### Telemetry
+
+This fork does not include upstream anonymous telemetry or public leaderboard profiles.
+
 ## Where things are installed
 
 An agent asked to install, inspect, repair, or remove opencodex needs to know what is written
@@ -92,7 +96,7 @@ A host that has both a Task Scheduler entry and a WinSW service is in a conflict
 
 ### The CLI
 
-`npm install -g @bitkyc08/opencodex` puts `ocx` on the PATH from npm's global prefix, and the
+`npm install -g --allow-scripts=bun @bitkyc08/opencodex` puts `ocx` on the PATH from npm's global prefix, and the
 Bun runtime it needs is bundled inside that package. There is no separate runtime to install and
 no WSL layer on Windows.
 
