@@ -1,0 +1,750 @@
+/* Fill the available main region without covering app navigation or the quota strip. */
+.main:has(.main-inner--playground) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main:has(.main-inner--playground) > :not(.main-inner) {
+  flex-shrink: 0;
+}
+
+.main-inner.main-inner--playground {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  container-type: normal;
+}
+
+.playground:fullscreen {
+  height: 100dvh;
+}
+
+.playground-sidebar-heading,
+.playground-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.playground-fullscreen {
+  margin-inline-start: auto;
+}
+
+.playground-history-backdrop {
+  display: none;
+}
+
+/* Chat workspace. Reuse .btn, .input, .badge and .dialog/.dialog-actions. */
+.playground {
+  display: flex;
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.playground-sidebar {
+  display: flex;
+  flex: 0 0 calc(var(--space-16) * 4);
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+  border-inline-end: 1px solid var(--border);
+  background: var(--rail);
+}
+
+.playground-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.playground-topbar,
+.playground-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.playground-topbar {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--surface);
+}
+
+.playground-transcript {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-8) max(var(--space-6), calc((100% - var(--prose-measure)) / 2));
+  scrollbar-gutter: stable both-edges;
+}
+
+.playground-message {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.playground-message-user {
+  align-self: flex-end;
+  width: fit-content;
+  max-width: 85%;
+}
+
+.playground-message-assistant {
+  align-self: flex-start;
+}
+
+.playground-message-content {
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: var(--leading-relaxed);
+}
+
+.playground-message-user .playground-message-content {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--raised);
+}
+
+.playground-message-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.playground-message-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+
+.playground-message-user .playground-message-actions {
+  justify-content: flex-end;
+}
+
+.playground-composer {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(100%, calc(var(--prose-measure) + var(--space-12)));
+  align-self: center;
+  padding: var(--space-4) var(--space-6);
+  border-top: 0;
+  background: var(--surface);
+}
+
+.playground-composer textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: calc(var(--control-touch) + var(--space-8));
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--raised);
+  color: var(--text);
+  transition: border-color var(--motion-fast), background var(--motion-fast);
+  max-height: min(24dvh, calc(var(--space-16) * 3));
+  resize: vertical;
+  font-family: var(--font-ui);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+.playground-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  line-height: var(--leading-ui);
+  overflow-wrap: anywhere;
+}
+
+.playground-history-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.playground .playground-history > button:first-child {
+  display: block;
+  flex: 1;
+  height: 100%;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  font: inherit;
+  box-shadow: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playground-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.playground-settings-fields,
+.playground-custom-model-fields {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.playground-settings textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.playground-status {
+  flex-shrink: 0;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4) max(var(--space-3), env(safe-area-inset-bottom));
+}
+
+/* Settings occupy space only while expanded. */
+.playground-settings {
+  flex-shrink: 0;
+  max-height: 30dvh;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--rail);
+}
+
+.playground-settings > summary {
+  cursor: pointer;
+  font-size: var(--text-control);
+  font-weight: var(--weight-medium);
+}
+
+.playground-settings[open] > summary {
+  margin-bottom: var(--space-3);
+}
+
+.playground-history {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: var(--control-lg);
+  padding: var(--space-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--rail);
+  color: var(--text);
+  text-align: start;
+  font-family: var(--font-ui);
+  font-size: var(--text-control);
+  line-height: var(--leading-ui);
+  overflow-wrap: anywhere;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+
+.playground-history:hover,
+.playground-model-option:hover {
+  background: var(--raised-hover);
+}
+
+.playground-history.active,
+.playground-history[aria-current="true"],
+.playground-history[aria-current="page"] {
+  border-color: var(--border);
+  background: var(--raised);
+  font-weight: var(--weight-semibold);
+}
+
+/* The trigger owns the dropdown's positioning context. */
+.playground-model-control {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.playground-model-picker,
+.playground-model-options {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-start: 0;
+  z-index: var(--z-popover);
+  width: max-content;
+  min-width: 100%;
+  max-width: min(var(--prose-measure), calc(100vw - var(--space-12)));
+  max-height: min(50dvh, calc(var(--space-16) * 6));
+  overflow-y: auto;
+  padding: var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.playground-model-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  color: var(--text);
+  text-align: start;
+  font-family: var(--font-code);
+  font-size: var(--text-control);
+  line-height: var(--leading-ui);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.playground-model-option[aria-selected="true"],
+.playground-model-option.active {
+  background: var(--accent-soft);
+  font-weight: var(--weight-semibold);
+}
+
+/* Pair with .dialog or .modal-card inside existing shared dialog overlay. */
+.playground-dialog {
+  max-width: min(var(--prose-measure, 65ch), calc(100vw - var(--space-8)));
+  max-height: 84dvh;
+  overflow-y: auto;
+  color: var(--text);
+}
+
+.playground-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  min-width: 0;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-label);
+}
+
+.playground-field > :is(input, textarea, select) {
+  width: 100%;
+  min-width: 0;
+}
+
+.playground-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8);
+  color: var(--muted);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.playground-history-toggle,
+.playground-history-close {
+  display: none;
+}
+
+.playground-history-close {
+  align-self: flex-end;
+}
+
+.playground-sidebar > :not(.playground-history-list) {
+  flex-shrink: 0;
+}
+
+.playground-sidebar h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-subtitle);
+}
+
+.playground-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  scrollbar-gutter: stable;
+}
+
+.playground-history {
+  flex-shrink: 0;
+}
+
+.playground-history-entry {
+  flex-shrink: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.playground .playground-history-trigger {
+  display: inline-flex;
+  flex: 0 0 var(--control-sm);
+  align-items: center;
+  justify-content: center;
+  width: var(--control-sm);
+  height: var(--control-sm);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.playground-history-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  margin-block-start: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.playground .playground-history-actions > button {
+  justify-content: flex-start;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-md);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xs);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.playground .btn {
+  max-width: 100%;
+  gap: var(--space-1-5);
+}
+
+.playground .btn svg {
+  flex-shrink: 0;
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+.playground .playground-history > button:hover:not(:disabled),
+.playground .playground-history-trigger[aria-expanded="true"] {
+  background: var(--raised-hover);
+}
+
+.playground .playground-history-trigger:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.playground-composer textarea:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.playground-message > header,
+.playground-message-actions > details {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.playground-message-content pre,
+.playground-message-actions pre {
+  min-width: 0;
+  max-width: 100%;
+  margin-block: var(--space-3);
+  padding: var(--space-3);
+  overflow-x: auto;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--rail);
+  font-family: var(--font-code);
+  font-size: var(--text-control);
+  white-space: pre;
+  overflow-wrap: normal;
+}
+
+.playground-message-content :is(p, ul, ol) {
+  margin-block: 0 var(--space-3);
+}
+
+.playground-message-content > :last-child {
+  margin-bottom: 0;
+}
+
+.playground-toolbar > :last-child {
+  margin-inline-start: auto;
+}
+
+.playground-limitations {
+  flex-shrink: 0;
+  align-self: center;
+  width: min(100%, calc(var(--prose-measure) + var(--space-12)));
+  max-height: 18dvh;
+  margin: 0;
+  padding: var(--space-2) var(--space-6);
+  overflow-y: auto;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+
+.playground-limitations > summary {
+  cursor: pointer;
+  font-size: var(--text-label);
+}
+
+.playground-limitations p {
+  margin-block: var(--space-2) 0;
+}
+
+.playground-settings-head,
+.playground-settings-fields {
+  max-width: var(--prose-measure);
+  margin-inline: auto;
+}
+
+.playground-settings-head h3 {
+  margin: 0;
+}
+
+.playground-settings {
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.playground-model-control > button {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playground-model-picker > .input {
+  width: 100%;
+  min-width: 0;
+}
+
+.playground-model-picker h3 {
+  margin: var(--space-3) var(--space-2) var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+.playground-model-option > button:first-child {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.playground-model-option > button:last-child {
+  flex-shrink: 0;
+}
+
+.playground-model-option:has([aria-pressed="true"]:first-child) {
+  background: var(--accent-soft);
+}
+
+.playground-model-option code {
+  max-width: 100%;
+  color: var(--muted);
+  font-size: var(--text-label);
+  overflow-wrap: anywhere;
+}
+
+.playground :is(button, summary, input, textarea, select, [tabindex]):focus-visible {
+  outline: var(--space-0-5) solid var(--accent-ring);
+  outline-offset: var(--space-0-5);
+}
+
+.playground :is(button, input, textarea, select):disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+
+.playground [hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  /* Let the grid measure the real mobile header, including desktop-shell insets. */
+  .app:has(.main-inner--playground) {
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .main:has(.main-inner--playground) {
+    height: 100%;
+  }
+
+  .playground-history-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--z-overlay) - 1);
+    border: 0;
+    background: var(--bg);
+    opacity: .75;
+  }
+
+  .playground-sidebar {
+    display: none;
+  }
+
+  .playground.playground-history-open .playground-sidebar {
+    display: flex;
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: var(--z-overlay);
+    width: min(calc(var(--space-16) * 4), 88%);
+    box-shadow: var(--shadow);
+  }
+
+  .playground-history-toggle,
+  .playground-history-close {
+    display: inline-flex;
+  }
+
+  .playground-history-open .playground-main {
+    visibility: hidden;
+  }
+
+  .playground-topbar,
+  .playground-composer,
+  .playground-settings {
+    padding: var(--space-3);
+  }
+
+  .playground-transcript {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .playground-limitations {
+    padding-inline: var(--space-3);
+  }
+
+  .playground-topbar {
+    position: relative;
+  }
+
+  .playground-model-control {
+    position: static;
+    flex: 1;
+  }
+
+  .playground-model-picker {
+    inset-inline: var(--space-3);
+    width: auto;
+    min-width: 0;
+    max-width: none;
+  }
+
+  .playground-message {
+    max-width: 100%;
+  }
+
+  .playground :is(button, summary, select) {
+    min-height: var(--control-touch);
+  }
+
+  .playground-empty {
+    padding: var(--space-4);
+  }
+}
+
+/* Short, one-shot entrances clarify newly revealed content without shifting layout. */
+@keyframes playground-reveal {
+  from { opacity: 0; transform: translateY(var(--space-1)); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.playground-model-picker,
+.playground-model-options,
+.playground-history-actions,
+.playground-settings[open] > :not(summary),
+.playground-message {
+  animation: playground-reveal var(--motion-normal) ease-out;
+}
+
+@media (max-width: 760px) {
+  .playground-history {
+    height: calc(var(--control-touch) + var(--space-2));
+  }
+
+  .playground .playground-history-trigger {
+    flex-basis: var(--control-touch);
+    width: var(--control-touch);
+    height: var(--control-touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playground *,
+  .playground *::before,
+  .playground *::after {
+    animation: none;
+    transition: none;
+    scroll-behavior: auto;
+  }
+}

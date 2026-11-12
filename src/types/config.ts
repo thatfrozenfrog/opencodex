@@ -1368,6 +1368,9 @@ export interface OcxConfig {
    * and every other destination are unchanged. Compression runs synchronously on the event loop.
    */
   upstreamRequestCompression?: "off" | "gzip" | "zstd";
+  /** Opt-in lossy filtering of recognized tool outputs before provider dispatch. */
+  toolResultCompression?: boolean;
+  toolResultCompressionOptions?: import("../server/tool-saver-filter").SaverOptions;
   /**
    * Opt-in ceiling, in bytes, on a decompressed INBOUND data-plane request body (#3573).
    *

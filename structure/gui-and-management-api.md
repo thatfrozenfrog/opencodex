@@ -73,6 +73,25 @@ the web route. The native panel introduces no management endpoint or credential 
 
 ## Dashboard serving
 
+The sidebar registers Playground as a standalone `#playground` page through
+`gui/src/app-routing.ts`, `gui/src/nav-groups.ts`, and `gui/src/App.tsx`. The chat workspace
+keeps conversation state in page memory, supports configured/custom model IDs, and separates
+provider setup from chat. Its main region fills the available viewport below the quota strip;
+optional browser fullscreen, a dismissible mobile history drawer, and per-conversation drafts
+retain the chat-first hierarchy. Model-picker dismissal restores focus on Escape.
+Generation settings apply to the next send; unsupported optional
+parameters remain provider errors. The backend dispatches `POST /api/playground/chat` through
+normal management authorization and CSRF admission. Its handler accepts only bounded text
+messages and an allowlisted parameter set, limits output to 16,384 tokens (default 2,048),
+allows two concurrent process-local requests, and uses a 120-second deadline with cancellation.
+The existing local-chat helper selects the trusted inference destination and admission credential;
+management credentials, caller URLs, and custom headers never enter inference requests. Ordinary
+routing, usage, and history still apply. Fixed error categories hide upstream bodies; upstream
+401 maps to 502 to avoid management-session retry. The helper returns completed text only:
+streaming, actual upstream identity, usage, cache counts, finish reason, and cost are unavailable.
+The response identifies its model as requested, not verified. The UI disables streaming and
+attachments, shows unknown metrics as missing, and renders a safe Markdown subset without HTML.
+
 Management exports, integration write/preview/refresh inputs and Claude port projections use `managementInferencePort` in `src/server/management/context.ts` for the PUBLIC bound port, never the request URL port. `src/server/index/serve-options.ts` supplies `liveListenPort`; direct fixtures fall back to config. Cursor status in `src/server/management/cursor-integration-routes.ts` uses live -> PID-matched runtime -> config. Destination resolution and explicit loopback companion precedence stay in `standaloneCodexRoutingTarget` (`src/codex/inject/routing-target.ts`), `effectiveLoopbackListenerPort` (`src/codex/loopback-target.ts`) and `localInferenceDestination` (`src/lib/local-destinations.ts`).
 
 > Decision record: [ADR-6598](decisions/ADR-6598-management-inference-port.md)

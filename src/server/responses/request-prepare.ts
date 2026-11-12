@@ -10,6 +10,7 @@ import {
   recoverEncryptedAgentTaskWithResult,
 } from "./agent-task-recovery";
 import { readJsonRequestBody, resolveInboundBodyLimitBytes } from "../request-decompress";
+import { compressToolResults } from "../tool-result-compression";
 import {
   clientCancelledResponse,
   decodeRequestErrorResponse,
@@ -215,6 +216,8 @@ export async function prepareResponsesRequest(
     }
     return decodeRequestErrorResponse(err, "responses");
   }
+  // Chat and Messages ingress already applied the transform before their bridge.
+  if (inboundWire === "responses" && !concreteSelection) compressToolResults(body, config.toolResultCompression, config.toolResultCompressionOptions);
   // Remove display-only artifact paths before helpers, combo dispatch and upstream replay.
   redactHostedImageDisplayPaths(body);
   observeCacheDiagnosticInbound(

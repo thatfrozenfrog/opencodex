@@ -1,0 +1,2707 @@
+[
+  {
+    "id": "aws",
+    "label": "AWS CLI",
+    "description": "Compress AWS CLI progress output while preserving errors and completed transfers.",
+    "category": "cloud",
+    "priority": 76,
+    "match": {
+      "outputTypes": [
+        "aws"
+      ],
+      "commands": [
+        "^aws\\b"
+      ],
+      "patterns": [
+        "An error occurred \\([A-Za-z0-9]+\\) when calling",
+        "^(?:upload|download): "
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Completed \\d",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^(?:upload|download): ",
+        "An error occurred \\("
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "An error occurred",
+        "AccessDenied",
+        "Throttling",
+        "ValidationError"
+      ],
+      "summaryPatterns": [
+        "^(?:upload|download): "
+      ]
+    }
+  },
+  {
+    "id": "biome",
+    "label": "Biome",
+    "description": "Compact Biome lint/format output.",
+    "category": "build",
+    "priority": 80,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^biome\\b",
+        "^npx\\s+biome\\b"
+      ],
+      "patterns": [
+        "Checked \\d+ files?",
+        "biome"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$",
+        "^Checked \\d+ files? in"
+      ],
+      "includePatterns": [
+        "error",
+        "warning",
+        "✖",
+        "Checked",
+        "Fixed",
+        "^\\s*>"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 40,
+      "onEmpty": "biome: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error",
+        "✖"
+      ],
+      "summaryPatterns": [
+        "Checked",
+        "Fixed"
+      ]
+    }
+  },
+  {
+    "id": "build-eslint",
+    "label": "ESLint",
+    "description": "Keep lint diagnostics and problem summary.",
+    "category": "build",
+    "priority": 88,
+    "match": {
+      "outputTypes": [
+        "build-eslint"
+      ],
+      "commands": [
+        "^(?:eslint|npm\\s+run\\s+lint)\\b"
+      ],
+      "patterns": [
+        "\\s+\\d+:\\d+\\s+(?:error|warning)\\s+",
+        "✖\\s+\\d+\\s+problems?"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "\\s+\\d+:\\d+\\s+(error|warning)\\s+",
+        "✖\\s+\\d+\\s+problems?",
+        "^/.*\\.(ts|tsx|js|jsx)$"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 120,
+      "headLines": 20,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error",
+        "warning",
+        "problems?"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "build-typescript",
+    "label": "TypeScript",
+    "description": "Keep TypeScript diagnostics and file locations.",
+    "category": "build",
+    "priority": 93,
+    "match": {
+      "outputTypes": [
+        "build-typescript"
+      ],
+      "commands": [
+        "^(?:tsc|npm\\s+run\\s+typecheck)\\b"
+      ],
+      "patterns": [
+        "TS\\d{4}:",
+        "error TS\\d{4}"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "TS\\d{4}:",
+        "error TS\\d{4}",
+        "^Found \\d+ errors?"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 120,
+      "headLines": 20,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "TS\\d{4}",
+        "Found \\d+"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "build-vite",
+    "label": "Vite Build",
+    "description": "Keep Vite errors and final build summary.",
+    "category": "build",
+    "priority": 83,
+    "match": {
+      "outputTypes": [
+        "build-vite"
+      ],
+      "commands": [
+        "^vite\\s+build\\b",
+        "^npm\\s+run\\s+build\\b",
+        "^pnpm\\s+build\\b"
+      ],
+      "patterns": [
+        "vite v[\\d.]+",
+        "✓ built in"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "matchOutput": [
+        {
+          "pattern": "✓ built in",
+          "message": "vite: build ok",
+          "unless": "error|failed"
+        }
+      ],
+      "includePatterns": [
+        "error",
+        "failed",
+        "✓ built in",
+        "dist/",
+        "rendering chunks"
+      ],
+      "dropPatterns": [
+        "^transforming ",
+        "^✓ \\d+ modules transformed",
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^dist/"
+      ],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 45
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "✓ built in"
+      ]
+    }
+  },
+  {
+    "id": "build-webpack",
+    "label": "Webpack Build",
+    "description": "Keep webpack errors/warnings and compilation summary.",
+    "category": "build",
+    "priority": 84,
+    "match": {
+      "outputTypes": [
+        "build-webpack"
+      ],
+      "commands": [
+        "^webpack\\b",
+        "^npx\\s+webpack\\b"
+      ],
+      "patterns": [
+        "webpack \\d",
+        "compiled (?:successfully|with)"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "ERROR in",
+        "WARNING in",
+        "compiled ",
+        "asset ",
+        "Entrypoint"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^cacheable modules"
+      ],
+      "collapsePatterns": [
+        "^asset "
+      ],
+      "deduplicate": true,
+      "maxLines": 140,
+      "headLines": 35,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "ERROR in"
+      ],
+      "summaryPatterns": [
+        "compiled "
+      ]
+    }
+  },
+  {
+    "id": "bundle-install",
+    "label": "Bundle Install",
+    "description": "Strip bundle install noise and keep final status.",
+    "category": "package",
+    "priority": 70,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^bundle\\s+install\\b"
+      ],
+      "patterns": [
+        "Bundle complete",
+        "Using "
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Using ",
+        "^Fetching ",
+        "^Installing ",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "Bundle complete",
+        "Your bundle is complete",
+        "ERROR",
+        "Gem::"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 35,
+      "onEmpty": "bundle: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "ERROR",
+        "Gem::"
+      ],
+      "summaryPatterns": [
+        "Bundle complete",
+        "Your bundle is complete"
+      ]
+    }
+  },
+  {
+    "id": "composer",
+    "label": "Composer (PHP)",
+    "description": "Keep Composer install/update results, warnings, and dependency errors.",
+    "category": "package",
+    "priority": 65,
+    "match": {
+      "outputTypes": [
+        "composer"
+      ],
+      "commands": [
+        "^composer\\s+(?:install|update|require|remove|dump-autoload|outdated)\\b",
+        "^php\\s+composer(?:\\.phar)?\\s+(?:install|update|require)\\b"
+      ],
+      "patterns": [
+        "Package operations: \\d+ install",
+        "Generating (?:optimized )?autoload files",
+        "Your requirements could not be resolved",
+        "Problem \\d+",
+        "vulnerabilities found"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "Package operations: \\d+",
+        "Generating (?:optimized )?autoload files",
+        "Your requirements could not be resolved",
+        "Problem \\d+",
+        "vulnerabilities found",
+        "WARNING",
+        "ERROR",
+        "Could not (?:find|resolve|delete)",
+        "conflicts with",
+        "requires .+ but",
+        "- (?:Installing|Updating|Removing) \\S+",
+        "PHP Fatal error",
+        "Class .+ not found"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^Loading composer repositories",
+        "^Updating dependencies",
+        "^Writing lock file",
+        "^Installing dependencies from lock file",
+        "^Downloading \\(\\d+%\\)",
+        "^\\s*-\\s+Downloading"
+      ],
+      "collapsePatterns": [
+        "^\\s*-\\s+Installing"
+      ],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 20,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Your requirements could not be resolved",
+        "Problem \\d+",
+        "ERROR",
+        "PHP Fatal error",
+        "Class .+ not found"
+      ],
+      "summaryPatterns": [
+        "Package operations: \\d+",
+        "Generating (?:optimized )?autoload files",
+        "vulnerabilities found"
+      ]
+    }
+  },
+  {
+    "id": "curl",
+    "label": "curl",
+    "description": "Remove curl progress noise and keep HTTP status/errors.",
+    "category": "cloud",
+    "priority": 70,
+    "match": {
+      "outputTypes": [
+        "curl"
+      ],
+      "commands": [
+        "^curl\\b"
+      ],
+      "patterns": [
+        "curl: \\(\\d+\\)",
+        "^HTTP/\\d(?:\\.\\d)? \\d{3}"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*% Total\\s+% Received",
+        "^\\s*\\d+\\s+\\d+",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^HTTP/\\d(?:\\.\\d)? \\d{3}",
+        "^curl: \\(\\d+\\)",
+        "^[<{]"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 30,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "curl: \\(\\d+\\)",
+        "^HTTP/\\d(?:\\.\\d)? [45]\\d\\d"
+      ],
+      "summaryPatterns": [
+        "^HTTP/\\d(?:\\.\\d)? \\d{3}"
+      ]
+    }
+  },
+  {
+    "id": "df",
+    "label": "df",
+    "description": "Keep filesystem usage table headers and mounted filesystems.",
+    "category": "shell",
+    "priority": 67,
+    "match": {
+      "outputTypes": [
+        "shell-df"
+      ],
+      "commands": [
+        "^df\\b"
+      ],
+      "patterns": [
+        "^Filesystem\\s+.*Use%"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^tmpfs\\s",
+        "^udev\\s",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^Filesystem\\s+",
+        "^/dev/\\S+\\s+"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 80,
+      "headLines": 25,
+      "tailLines": 25
+    },
+    "preserve": {
+      "errorPatterns": [
+        "No such file",
+        "Permission denied"
+      ],
+      "summaryPatterns": [
+        "Use%",
+        "^/dev/"
+      ]
+    }
+  },
+  {
+    "id": "docker-build",
+    "label": "Docker Build",
+    "description": "Keep Docker build errors and final summary while stripping layer-by-layer progress.",
+    "category": "docker",
+    "priority": 82,
+    "match": {
+      "outputTypes": [
+        "docker-build"
+      ],
+      "commands": [
+        "^docker\\s+(?:build|buildx\\s+build)\\b",
+        "^(?:docker\\s+compose|docker-compose)\\s+build\\b"
+      ],
+      "patterns": [
+        "Successfully built \\w+",
+        "Successfully tagged \\S+",
+        "writing image sha256:",
+        "ERROR \\[",
+        "exit code: \\d+"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "ERROR",
+        "ERR!",
+        "exit code: \\d+",
+        "failed to solve",
+        "failed to compute cache key",
+        "Cannot connect to the Docker daemon",
+        "no such file or directory",
+        "Successfully built \\w+",
+        "Successfully tagged \\S+",
+        "writing image sha256:",
+        "naming to docker\\.io/\\S+",
+        "DONE",
+        "^Step \\d+/\\d+ :",
+        "Sending build context",
+        "WARN\\s*\\["
+      ],
+      "dropPatterns": [
+        "^#\\d+\\s+sha256:",
+        "^\\s*$",
+        "^\\s+\\d+\\.\\d+s$",
+        "^\\s*-+>\\s*Running in",
+        "^\\s*Removing intermediate container",
+        "^\\s*-+>\\s*[a-f0-9]{12}$"
+      ],
+      "collapsePatterns": [
+        "^#\\d+\\s+CACHED",
+        "^\\s*Pulling fs layer"
+      ],
+      "deduplicate": false,
+      "maxLines": 100,
+      "headLines": 15,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "ERROR",
+        "exit code: \\d+",
+        "failed to solve",
+        "Cannot connect"
+      ],
+      "summaryPatterns": [
+        "Successfully built",
+        "Successfully tagged",
+        "writing image",
+        "DONE"
+      ]
+    }
+  },
+  {
+    "id": "docker-logs",
+    "label": "Docker Logs",
+    "description": "Keep warnings/errors and recent Docker log context.",
+    "category": "docker",
+    "priority": 84,
+    "match": {
+      "outputTypes": [
+        "docker-logs"
+      ],
+      "commands": [
+        "^docker\\s+(?:compose\\s+)?logs\\b"
+      ],
+      "patterns": [
+        "\\b(?:ERROR|WARN|INFO)\\b",
+        "^Attaching to "
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Attaching to ",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "ERROR",
+        "WARN",
+        "Exception",
+        "Traceback",
+        "failed",
+        "listening",
+        "started"
+      ],
+      "collapsePatterns": [
+        "INFO"
+      ],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 20,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "ERROR",
+        "Exception",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "started",
+        "listening"
+      ]
+    }
+  },
+  {
+    "id": "docker-ps",
+    "label": "Docker PS",
+    "description": "Keep docker container table header and rows under a fixed cap.",
+    "category": "docker",
+    "priority": 60,
+    "match": {
+      "outputTypes": [
+        "docker-ps"
+      ],
+      "commands": [
+        "^docker\\s+ps\\b"
+      ],
+      "patterns": [
+        "^CONTAINER ID\\s+IMAGE\\s+COMMAND"
+      ]
+    },
+    "rules": {
+      "includePatterns": [],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 80,
+      "headLines": 30,
+      "tailLines": 20
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^CONTAINER ID"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "dotnet",
+    "label": ".NET CLI",
+    "description": "Strip the .NET build banner and restore chatter; keep build/test status, warnings (CS####), and errors.",
+    "category": "build",
+    "priority": 78,
+    "match": {
+      "outputTypes": [
+        "dotnet"
+      ],
+      "commands": [
+        "^dotnet\\b"
+      ],
+      "patterns": [
+        "^Build (?:succeeded|FAILED)\\b",
+        "\\b(?:error|warning) CS\\d+\\b"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Microsoft \\(R\\)",
+        "^Copyright \\(C\\) Microsoft",
+        "Determining projects to restore",
+        "^\\s*Restored ",
+        "^\\s*$",
+        "^Time Elapsed "
+      ],
+      "collapsePatterns": [
+        "^\\s*Restored "
+      ],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 40,
+      "tailLines": 60,
+      "onEmpty": "dotnet: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Build FAILED",
+        "FAILED",
+        "\\berror CS\\d+\\b",
+        "\\bwarning CS\\d+\\b",
+        "Failed!"
+      ],
+      "summaryPatterns": [
+        "Build succeeded",
+        "Passed!",
+        "Total tests:"
+      ]
+    }
+  },
+  {
+    "id": "du",
+    "label": "du",
+    "description": "Summarize disk-usage listings while preserving largest entries.",
+    "category": "shell",
+    "priority": 66,
+    "match": {
+      "outputTypes": [
+        "shell-du"
+      ],
+      "commands": [
+        "^du\\b"
+      ],
+      "patterns": [
+        "^\\d+(?:\\.\\d+)?[KMGTP]?\\s+\\S+"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 80,
+      "headLines": 20,
+      "tailLines": 30
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Permission denied",
+        "No such file"
+      ],
+      "summaryPatterns": [
+        "\\s+\\.$",
+        "\\s+total$"
+      ]
+    }
+  },
+  {
+    "id": "error-stacktrace",
+    "label": "Error Stacktrace",
+    "description": "Collapse stack traces while preserving error text and top frames.",
+    "category": "generic",
+    "priority": 70,
+    "match": {
+      "outputTypes": [
+        "error-stacktrace"
+      ],
+      "commands": [],
+      "patterns": [
+        "Traceback \\(most recent call last\\):",
+        "^\\s+at\\s+",
+        "^panic: "
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "Error:",
+        "Exception:",
+        "Traceback",
+        "^\\s+at ",
+        "^panic:",
+        "^thread ",
+        "^Caused by:"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^\\s+at "
+      ],
+      "deduplicate": true,
+      "maxLines": 80,
+      "headLines": 25,
+      "tailLines": 30
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Error:",
+        "Exception:",
+        "^panic:",
+        "Traceback"
+      ],
+      "summaryPatterns": [
+        "Caused by:"
+      ]
+    }
+  },
+  {
+    "id": "gcloud",
+    "label": "gcloud",
+    "description": "Compress Google Cloud CLI output and preserve actionable errors.",
+    "category": "cloud",
+    "priority": 75,
+    "match": {
+      "outputTypes": [
+        "gcloud"
+      ],
+      "commands": [
+        "^gcloud\\b"
+      ],
+      "patterns": [
+        "^ERROR: \\(gcloud\\.",
+        "^Updated property \\["
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Waiting for operation",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^ERROR: \\(gcloud\\.",
+        "^Updated property \\[",
+        "^Created \\["
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^ERROR: \\(gcloud\\.",
+        "PERMISSION_DENIED",
+        "NOT_FOUND"
+      ],
+      "summaryPatterns": [
+        "^Updated property \\[",
+        "^Created \\["
+      ]
+    }
+  },
+  {
+    "id": "generic-output",
+    "label": "Generic Output",
+    "description": "Fallback filter for unknown command output.",
+    "category": "generic",
+    "priority": 10,
+    "match": {
+      "outputTypes": [
+        "generic-output",
+        "generic-error"
+      ],
+      "commands": [],
+      "patterns": [
+        "Error:",
+        "Exception:",
+        "Traceback \\(most recent call last\\):"
+      ]
+    },
+    "rules": {
+      "includePatterns": [],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 250,
+      "headLines": 120,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error",
+        "failed",
+        "exception",
+        "traceback"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "gh",
+    "label": "GitHub CLI",
+    "description": "Keep GitHub CLI command results, errors, and PR/issue summaries while stripping pagination noise. Skips `gh api` and `--json` invocations (structured output that would be corrupted by line filtering).",
+    "category": "cloud",
+    "priority": 70,
+    "match": {
+      "outputTypes": [
+        "gh"
+      ],
+      "commands": [
+        "^gh\\s+(?:pr|issue|repo|run|workflow|release|auth|browse|gist|secret|label|search|status)\\b"
+      ],
+      "patterns": [
+        "^https?://github\\.com/",
+        "Created pull request",
+        "Created issue",
+        "✓\\s+Logged in",
+        "X\\s+\\S+",
+        "GraphQL error",
+        "HTTP \\d{3}:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "^https?://github\\.com/",
+        "Creat(?:ed|ing) pull request",
+        "Creat(?:ed|ing) issue",
+        "Merged pull request",
+        "Closed (?:pull request|issue)",
+        "Reopened",
+        "✓\\s+",
+        "X\\s+\\S+",
+        "FAIL",
+        "GraphQL error",
+        "HTTP \\d{3}:",
+        "error:",
+        "not found",
+        "must be authenticated",
+        "rate limit",
+        "completed\\s+\\w+",
+        "queued\\s+\\w+",
+        "in_progress\\s+\\w+",
+        "#\\d+\\s+\\S"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^Showing \\d+ of \\d+",
+        "^For more information on output formatting"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 80,
+      "headLines": 20,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "GraphQL error",
+        "HTTP \\d{3}:",
+        "error:",
+        "not found",
+        "must be authenticated",
+        "rate limit"
+      ],
+      "summaryPatterns": [
+        "Creat(?:ed|ing) pull request",
+        "Creat(?:ed|ing) issue",
+        "Merged pull request",
+        "^https?://github\\.com/"
+      ]
+    }
+  },
+  {
+    "id": "git-branch",
+    "label": "Git Branch",
+    "description": "Compact git branch/switch output.",
+    "category": "git",
+    "priority": 94,
+    "match": {
+      "outputTypes": [
+        "git-branch"
+      ],
+      "commands": [
+        "^git\\s+(?:branch|checkout|switch)\\b"
+      ],
+      "patterns": [
+        "^\\*\\s+\\S+",
+        "Switched to (?:a new )?branch",
+        "Already on"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "matchOutput": [
+        {
+          "pattern": "Switched to (?:a new )?branch",
+          "message": "git: switched branch",
+          "unless": "error|failed"
+        },
+        {
+          "pattern": "Already on",
+          "message": "git: already on branch"
+        }
+      ],
+      "includePatterns": [
+        "^\\*\\s+\\S+",
+        "^\\s{2}\\S+",
+        "Switched to",
+        "Already on"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 60,
+      "headLines": 20,
+      "tailLines": 20
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "Switched to",
+        "Already on"
+      ]
+    }
+  },
+  {
+    "id": "git-diff",
+    "label": "Git Diff",
+    "description": "Drop low-signal diff metadata while preserving files, hunks, and changed lines.",
+    "category": "git",
+    "priority": 94,
+    "match": {
+      "outputTypes": [
+        "git-diff"
+      ],
+      "commands": [
+        "^git\\s+(?:diff|show)\\b"
+      ],
+      "patterns": [
+        "^diff --git ",
+        "^@@\\s+-\\d+,\\d+\\s+\\+\\d+,\\d+\\s+@@"
+      ]
+    },
+    "rules": {
+      "includePatterns": [],
+      "dropPatterns": [
+        "^index [0-9a-f]+\\.\\.[0-9a-f]+.*$",
+        "^--- a/",
+        "^\\+\\+\\+ b/"
+      ],
+      "collapsePatterns": [
+        "^\\s*$"
+      ],
+      "deduplicate": true,
+      "maxLines": 180,
+      "headLines": 40,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^diff --git ",
+        "^@@ ",
+        "^[+-][^-+]"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "git-log",
+    "label": "Git Log",
+    "description": "Keep commit identifiers and subjects from verbose logs.",
+    "category": "git",
+    "priority": 70,
+    "match": {
+      "outputTypes": [
+        "git-log"
+      ],
+      "commands": [
+        "^git\\s+log\\b"
+      ],
+      "patterns": [
+        "^commit [0-9a-f]{7,40}",
+        "^Author: "
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "^commit [0-9a-f]{7,40}",
+        "^\\s{4}\\S"
+      ],
+      "dropPatterns": [
+        "^Author: ",
+        "^Date: ",
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 120,
+      "headLines": 40,
+      "tailLines": 20
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^commit "
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "git-status",
+    "label": "Git Status",
+    "description": "Keep branch, staged/unstaged headings, and changed file lines.",
+    "category": "git",
+    "priority": 95,
+    "match": {
+      "outputTypes": [
+        "git-status"
+      ],
+      "commands": [
+        "^git\\s+status\\b"
+      ],
+      "patterns": [
+        "^On branch ",
+        "^Changes (?:not staged|to be committed)",
+        "^Untracked files:"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "^On branch ",
+        "^Your branch ",
+        "^Changes ",
+        "^Untracked files:",
+        "^\\s*(modified|new file|deleted|renamed|both modified):",
+        "^\\s*[MADRCU?!]{1,2}\\s+"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^\\s*\\(use .*\\)$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 80,
+      "headLines": 12,
+      "tailLines": 20
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^Changes ",
+        "^Untracked files:"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "golangci-lint",
+    "label": "golangci-lint",
+    "description": "Keep golangci-lint findings and summary.",
+    "category": "build",
+    "priority": 82,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^golangci-lint\\b"
+      ],
+      "patterns": [
+        "issues:",
+        "level=error",
+        ":\\d+:\\d+:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        ":\\d+:\\d+:",
+        "level=error",
+        "issues:",
+        "Error:"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 140,
+      "headLines": 35,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "level=error",
+        "Error:"
+      ],
+      "summaryPatterns": [
+        "issues:"
+      ]
+    }
+  },
+  {
+    "id": "gradle",
+    "label": "Gradle",
+    "description": "Strip Gradle daemon/welcome chatter and no-op tasks; keep build status, failures, and warnings.",
+    "category": "build",
+    "priority": 78,
+    "match": {
+      "outputTypes": [
+        "gradle"
+      ],
+      "commands": [
+        "^(?:gradle|gradlew|\\./gradlew)\\b"
+      ],
+      "patterns": [
+        "^> Task :",
+        "^BUILD (?:SUCCESSFUL|FAILED)\\b"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Welcome to Gradle",
+        "^Starting a Gradle Daemon",
+        "^> Task :\\S+ (?:UP-TO-DATE|SKIPPED|NO-SOURCE|FROM-CACHE)$",
+        "^Download https?://",
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^> Task :\\S+$"
+      ],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 40,
+      "tailLines": 60,
+      "onEmpty": "gradle: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "BUILD FAILED",
+        "FAILED",
+        "What went wrong",
+        "Caused by:",
+        "error:",
+        "> Task :\\S+ FAILED"
+      ],
+      "summaryPatterns": [
+        "BUILD SUCCESSFUL",
+        "actionable task"
+      ]
+    }
+  },
+  {
+    "id": "json-output",
+    "label": "JSON Output",
+    "description": "Keep actionable JSON status, error and message fields while preserving structure.",
+    "category": "generic",
+    "priority": 70,
+    "match": {
+      "outputTypes": [
+        "json-output"
+      ],
+      "commands": [
+        "^(?:jq\\b|cat\\s+.*\\.json\\b)"
+      ],
+      "patterns": [
+        "^\\s*[\\[{][\\s\\S]*[\\]}]\\s*$"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "\"status\"\\s*:",
+        "\"error\"\\s*:",
+        "\"errors\"\\s*:",
+        "\"code\"\\s*:",
+        "\"message\"\\s*:",
+        "[{}\\[\\],]"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 120,
+      "headLines": 20,
+      "tailLines": 30
+    },
+    "preserve": {
+      "errorPatterns": [
+        "\"error\"",
+        "\"errors\"",
+        "\"message\""
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "kubectl",
+    "label": "kubectl",
+    "description": "Keep kubectl status, rollout and error output. Skips logs/exec/top (arbitrary content) and structured -o json/yaml output.",
+    "category": "cloud",
+    "priority": 78,
+    "match": {
+      "outputTypes": [
+        "kubectl"
+      ],
+      "commands": [
+        "^kubectl\\s+(?:get|describe|apply|delete|rollout|events?)\\b"
+      ],
+      "patterns": [
+        "NAME\\s+READY\\s+STATUS",
+        "NAME\\s+TYPE\\s+CLUSTER-IP",
+        "CrashLoopBackOff",
+        "ImagePullBackOff",
+        "ErrImagePull",
+        "FailedScheduling",
+        "OOMKilled",
+        "Error from server"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "Error from server",
+        "CrashLoopBackOff",
+        "ImagePullBackOff",
+        "ErrImagePull",
+        "FailedScheduling",
+        "OOMKilled",
+        "Evicted",
+        "ContainerCannotRun",
+        "BackOff",
+        "Unhealthy",
+        "Killing",
+        "Restarting",
+        "NAME\\s+READY\\s+STATUS",
+        "NAME\\s+TYPE\\s+CLUSTER-IP",
+        "Warning\\s+",
+        "deployment\\.apps/\\S+\\s+(?:created|configured|unchanged)",
+        "service/\\S+\\s+(?:created|configured)",
+        "pod/\\S+\\s+(?:created|deleted)",
+        "rollout (?:status|history)",
+        "successfully rolled out"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^\\s*creationTimestamp:",
+        "^\\s*resourceVersion:",
+        "^\\s*uid:",
+        "^\\s*managedFields:",
+        "^\\s*selfLink:",
+        "^\\s*generation:"
+      ],
+      "collapsePatterns": [
+        "Normal\\s+",
+        "^\\s*-\\s+lastTransitionTime:"
+      ],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 20,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Error from server",
+        "CrashLoopBackOff",
+        "ImagePullBackOff",
+        "OOMKilled",
+        "FailedScheduling",
+        "Evicted"
+      ],
+      "summaryPatterns": [
+        "successfully rolled out",
+        "deployment\\.apps/\\S+\\s+\\w+"
+      ]
+    }
+  },
+  {
+    "id": "make",
+    "label": "Make",
+    "description": "Strip make directory chatter and empty lines.",
+    "category": "build",
+    "priority": 78,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^make\\b"
+      ],
+      "patterns": [
+        "make\\[\\d+\\]: (?:Entering|Leaving) directory"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^make\\[\\d+\\]: (?:Entering|Leaving) directory",
+        "^\\s*$",
+        "Nothing to be done for"
+      ],
+      "collapsePatterns": [
+        "^(?:cc|gcc|clang|g\\+\\+)\\b"
+      ],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 40,
+      "onEmpty": "make: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error:",
+        "failed",
+        "\\*\\*\\*"
+      ],
+      "summaryPatterns": [
+        "built",
+        "linking"
+      ]
+    }
+  },
+  {
+    "id": "mypy",
+    "label": "mypy",
+    "description": "Keep mypy errors grouped by file and final summary.",
+    "category": "build",
+    "priority": 82,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^mypy\\b",
+        "^python\\s+-m\\s+mypy\\b"
+      ],
+      "patterns": [
+        ": error:",
+        "Found \\d+ errors? in"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        ": error:",
+        ": note:",
+        "Found \\d+ errors?",
+        "Success: no issues found"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 40,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        ": error:",
+        "Found \\d+ errors?"
+      ],
+      "summaryPatterns": [
+        "Success:",
+        "Found \\d+"
+      ]
+    }
+  },
+  {
+    "id": "npm-audit",
+    "label": "npm audit",
+    "description": "Keep vulnerability counts and remediation hints.",
+    "category": "package",
+    "priority": 84,
+    "match": {
+      "outputTypes": [
+        "npm-audit"
+      ],
+      "commands": [
+        "^(?:npm|pnpm|yarn)\\s+audit\\b"
+      ],
+      "patterns": [
+        "found \\d+ vulnerabilities",
+        "\\bcritical\\b"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "vulnerabilities",
+        "critical",
+        "high",
+        "moderate",
+        "low",
+        "fix available",
+        "npm audit fix",
+        "No vulnerabilities"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^# npm audit report"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 45
+    },
+    "preserve": {
+      "errorPatterns": [
+        "critical",
+        "high"
+      ],
+      "summaryPatterns": [
+        "vulnerabilities",
+        "No vulnerabilities"
+      ]
+    }
+  },
+  {
+    "id": "npm-install",
+    "label": "Package Install",
+    "description": "Keep install summaries, warnings and audit results.",
+    "category": "package",
+    "priority": 65,
+    "match": {
+      "outputTypes": [
+        "npm-install"
+      ],
+      "commands": [
+        "^(?:npm|pnpm|yarn)\\s+(?:install|add|update)\\b"
+      ],
+      "patterns": [
+        "added \\d+ packages",
+        "packages are looking for funding",
+        "audited \\d+ packages"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "added \\d+ packages",
+        "removed \\d+ packages",
+        "changed \\d+ packages",
+        "audited \\d+ packages",
+        "vulnerabilities",
+        "WARN",
+        "ERR!"
+      ],
+      "dropPatterns": [
+        "^\\s*$",
+        "^\\s*\\|",
+        "^Progress:"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 80,
+      "headLines": 20,
+      "tailLines": 30
+    },
+    "preserve": {
+      "errorPatterns": [
+        "WARN",
+        "ERR",
+        "vulnerabilities"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "nx",
+    "label": "Nx",
+    "description": "Compact Nx task graph and output.",
+    "category": "build",
+    "priority": 76,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^nx\\b",
+        "^npx\\s+nx\\b"
+      ],
+      "patterns": [
+        "NX   ",
+        "Successfully ran target"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$",
+        "^> nx run"
+      ],
+      "includePatterns": [
+        "NX   ",
+        "ERROR",
+        "Failed",
+        "Successfully ran",
+        "Running target"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 25,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "ERROR",
+        "Failed"
+      ],
+      "summaryPatterns": [
+        "Successfully ran"
+      ]
+    }
+  },
+  {
+    "id": "pip",
+    "label": "pip",
+    "description": "Strip pip install progress and keep install/failure summary.",
+    "category": "package",
+    "priority": 72,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^pip\\s+(?:install|sync|download)\\b",
+        "^python\\s+-m\\s+pip\\s+install\\b"
+      ],
+      "patterns": [
+        "Successfully installed",
+        "Requirement already satisfied"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Collecting ",
+        "^Downloading ",
+        "^Installing collected packages:",
+        "^Requirement already satisfied",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "Successfully installed",
+        "ERROR:",
+        "WARNING:",
+        "failed",
+        "Could not find"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 35,
+      "onEmpty": "pip: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "ERROR:",
+        "failed",
+        "Could not find"
+      ],
+      "summaryPatterns": [
+        "Successfully installed"
+      ]
+    }
+  },
+  {
+    "id": "playwright",
+    "label": "Playwright",
+    "description": "Keep failed specs, error context, and summary.",
+    "category": "test",
+    "priority": 86,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^playwright\\s+test\\b",
+        "^npx\\s+playwright\\s+test\\b"
+      ],
+      "patterns": [
+        "Running \\d+ tests?",
+        "Error Context:",
+        "failed"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$",
+        "^Running \\d+ tests? using"
+      ],
+      "includePatterns": [
+        "✘",
+        "Error:",
+        "Error Context:",
+        "failed",
+        "passed",
+        "Slow test file",
+        "^\\s*\\d+\\)"
+      ],
+      "collapsePatterns": [
+        "^\\s+at "
+      ],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 35,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Error:",
+        "✘",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "passed",
+        "failed"
+      ]
+    }
+  },
+  {
+    "id": "poetry-install",
+    "label": "Poetry Install",
+    "description": "Strip Poetry package operation noise.",
+    "category": "package",
+    "priority": 72,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^poetry\\s+(?:install|update)\\b"
+      ],
+      "patterns": [
+        "Package operations:",
+        "Installing dependencies"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^  - Installing ",
+        "^  - Updating ",
+        "^Installing dependencies",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "Package operations:",
+        "Writing lock file",
+        "Error",
+        "failed"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 35,
+      "onEmpty": "poetry: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Error",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "Package operations:",
+        "Writing lock file"
+      ]
+    }
+  },
+  {
+    "id": "prettier",
+    "label": "Prettier",
+    "description": "Keep files that would be changed and final summary.",
+    "category": "build",
+    "priority": 79,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^prettier\\b",
+        "^npx\\s+prettier\\b"
+      ],
+      "patterns": [
+        "\\[warn\\]",
+        "All matched files use Prettier"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "matchOutput": [
+        {
+          "pattern": "All matched files use Prettier",
+          "message": "prettier: ok"
+        }
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "\\[warn\\]",
+        "Code style issues",
+        "All matched files"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 80,
+      "headLines": 20,
+      "tailLines": 30
+    },
+    "preserve": {
+      "errorPatterns": [
+        "\\[error\\]",
+        "Code style issues"
+      ],
+      "summaryPatterns": [
+        "All matched files"
+      ]
+    }
+  },
+  {
+    "id": "ps",
+    "label": "ps",
+    "description": "Keep process table headers and process rows, dropping empty noise.",
+    "category": "shell",
+    "priority": 68,
+    "match": {
+      "outputTypes": [
+        "shell-ps"
+      ],
+      "commands": [
+        "^ps\\b"
+      ],
+      "patterns": [
+        "^(?:USER\\s+PID|\\s*PID\\s+)"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^(?:USER\\s+PID|\\s*PID\\s+)",
+        "^\\S+\\s+\\d+\\s+",
+        "^\\s*\\d+\\s+"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "defunct",
+        "Permission denied"
+      ],
+      "summaryPatterns": [
+        "^(?:USER\\s+PID|\\s*PID\\s+)"
+      ]
+    }
+  },
+  {
+    "id": "rsync",
+    "label": "rsync",
+    "description": "Drop rsync transfer chatter while preserving copied files and errors.",
+    "category": "cloud",
+    "priority": 73,
+    "match": {
+      "outputTypes": [
+        "rsync"
+      ],
+      "commands": [
+        "^rsync\\b"
+      ],
+      "patterns": [
+        "^sending incremental file list",
+        "^rsync error:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^sending incremental file list",
+        "^sent \\d",
+        "^total size is",
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 140,
+      "headLines": 35,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^rsync error:",
+        "Permission denied",
+        "No such file"
+      ],
+      "summaryPatterns": [
+        "^sent \\d",
+        "^total size is"
+      ]
+    }
+  },
+  {
+    "id": "rubocop",
+    "label": "RuboCop",
+    "description": "Keep RuboCop offenses and final summary.",
+    "category": "build",
+    "priority": 74,
+    "match": {
+      "outputTypes": [
+        "rubocop"
+      ],
+      "commands": [
+        "^rubocop\\b",
+        "^bundle\\s+exec\\s+rubocop\\b"
+      ],
+      "patterns": [
+        "^Inspecting \\d+ files",
+        "^\\S+\\.rb:\\d+:\\d+: [A-Z]:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Inspecting \\d+ files",
+        "^\\.+$",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^\\S+\\.rb:\\d+:\\d+: [A-Z]:",
+        "^\\d+ files inspected"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 45
+    },
+    "preserve": {
+      "errorPatterns": [
+        " [EF]: ",
+        "Offenses:"
+      ],
+      "summaryPatterns": [
+        "^\\d+ files inspected"
+      ]
+    }
+  },
+  {
+    "id": "ruff",
+    "label": "Ruff",
+    "description": "Keep Ruff diagnostics and summary.",
+    "category": "build",
+    "priority": 82,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^ruff\\b",
+        "^uv\\s+run\\s+ruff\\b"
+      ],
+      "patterns": [
+        "Found \\d+ errors?",
+        "All checks passed"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "matchOutput": [
+        {
+          "pattern": "All checks passed",
+          "message": "ruff: ok"
+        }
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^[A-Z]\\d{3}",
+        "Found \\d+",
+        "error:",
+        "warning:",
+        "-->"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 30,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^[A-Z]\\d{3}",
+        "error:"
+      ],
+      "summaryPatterns": [
+        "Found \\d+",
+        "All checks passed"
+      ]
+    }
+  },
+  {
+    "id": "shell-find",
+    "label": "find",
+    "description": "Limit large find output while preserving head and tail.",
+    "category": "shell",
+    "priority": 80,
+    "match": {
+      "outputTypes": [
+        "shell-find"
+      ],
+      "commands": [
+        "^find\\b"
+      ],
+      "patterns": [
+        "^(?:\\./|/|[A-Za-z0-9_.-]+/)"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 40,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Permission denied",
+        "No such file"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "shell-grep",
+    "label": "grep/rg",
+    "description": "Deduplicate grep output while preserving matches.",
+    "category": "shell",
+    "priority": 82,
+    "match": {
+      "outputTypes": [
+        "shell-grep"
+      ],
+      "commands": [
+        "^(?:grep|rg|ag)\\b"
+      ],
+      "patterns": [
+        "^[\\w./-]+\\.(?:ts|tsx|js|jsx|py|go|rs|java|rb|md|json|ya?ml|txt):\\d*:",
+        "^[\\w./-]+/[\\w./-]+:\\d*:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^[\\w./-]+(?::\\d+)?:"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 40,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "No such file",
+        "Permission denied"
+      ],
+      "summaryPatterns": [
+        "^[^:\\n]+(?::\\d+)?:"
+      ]
+    }
+  },
+  {
+    "id": "shell-ls",
+    "label": "Shell Listing",
+    "description": "Keep directory listing boundaries without flooding the prompt.",
+    "category": "shell",
+    "priority": 50,
+    "match": {
+      "outputTypes": [
+        "shell-ls"
+      ],
+      "commands": [
+        "^(?:ls(?:\\s+-[A-Za-z]+)?|find)\\b"
+      ],
+      "patterns": [
+        "^total \\d+",
+        "^\\S+\\s+\\S+\\s+\\d+\\s+\\w+\\s+\\d{1,2}\\s+"
+      ]
+    },
+    "rules": {
+      "includePatterns": [],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 100,
+      "headLines": 40,
+      "tailLines": 30
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^total \\d+"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "ssh",
+    "label": "ssh",
+    "description": "Compress SSH connection logs while preserving access and host-key failures.",
+    "category": "cloud",
+    "priority": 72,
+    "match": {
+      "outputTypes": [
+        "ssh"
+      ],
+      "commands": [
+        "^ssh\\b"
+      ],
+      "patterns": [
+        "Permission denied \\(",
+        "Host key verification failed",
+        "Connection (?:closed|timed out)"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^debug\\d:",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "Permission denied",
+        "Host key verification failed",
+        "Connection (?:closed|timed out)",
+        "^Welcome "
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Permission denied",
+        "Host key verification failed",
+        "Connection timed out"
+      ],
+      "summaryPatterns": [
+        "^Welcome "
+      ]
+    }
+  },
+  {
+    "id": "systemctl-status",
+    "label": "systemctl status",
+    "description": "Preserve unit status, active state, and journal errors.",
+    "category": "infra",
+    "priority": 77,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^systemctl\\s+status\\b"
+      ],
+      "patterns": [
+        "Loaded:",
+        "Active:",
+        "Main PID:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "Loaded:",
+        "Active:",
+        "Main PID:",
+        "CGroup:",
+        "error",
+        "failed",
+        "Started",
+        "Stopped"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^\\s+Docs:"
+      ],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 30,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "failed",
+        "error"
+      ],
+      "summaryPatterns": [
+        "Active:",
+        "Loaded:"
+      ]
+    }
+  },
+  {
+    "id": "terraform-plan",
+    "label": "Terraform Plan",
+    "description": "Keep plan actions and summary while stripping refresh noise.",
+    "category": "infra",
+    "priority": 88,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^terraform\\s+plan\\b"
+      ],
+      "patterns": [
+        "Terraform will perform the following actions",
+        "Plan: \\d+ to add"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "Refreshing state",
+        "Acquiring state lock",
+        "Releasing state lock",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "Terraform will perform",
+        "^[ ]*[#~+\\-/]",
+        "Plan: \\d+",
+        "Error:"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 160,
+      "headLines": 35,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Error:",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "Plan: \\d+"
+      ]
+    }
+  },
+  {
+    "id": "test-cargo",
+    "label": "Cargo Test",
+    "description": "Keep Cargo test failures and final summary.",
+    "category": "test",
+    "priority": 90,
+    "match": {
+      "outputTypes": [
+        "test-cargo"
+      ],
+      "commands": [
+        "^cargo\\s+(?:test|nextest)\\b"
+      ],
+      "patterns": [
+        "^running \\d+ tests?",
+        "test result:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "^running \\d+ tests?",
+        "^test .* \\.\\.\\. FAILED",
+        "^failures:",
+        "^---- ",
+        "^thread ",
+        "^test result:",
+        "^error:"
+      ],
+      "dropPatterns": [
+        "^test .* \\.\\.\\. ok$",
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^\\s+at "
+      ],
+      "deduplicate": true,
+      "maxLines": 180,
+      "headLines": 40,
+      "tailLines": 70
+    },
+    "preserve": {
+      "errorPatterns": [
+        "FAILED",
+        "^error:",
+        "^thread "
+      ],
+      "summaryPatterns": [
+        "test result:"
+      ]
+    }
+  },
+  {
+    "id": "test-go",
+    "label": "Go Test",
+    "description": "Keep failing Go tests and package summaries.",
+    "category": "test",
+    "priority": 90,
+    "match": {
+      "outputTypes": [
+        "test-go"
+      ],
+      "commands": [
+        "^go\\s+test\\b"
+      ],
+      "patterns": [
+        "^--- FAIL:",
+        "^(?:ok|FAIL)\\s+"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "includePatterns": [
+        "^--- FAIL:",
+        "^FAIL",
+        "^ok\\s+",
+        "^panic:",
+        "^\\s+.*_test\\.go:\\d+",
+        "^\\s*Error"
+      ],
+      "dropPatterns": [
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^=== RUN"
+      ],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 35,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^--- FAIL:",
+        "^panic:",
+        "^FAIL"
+      ],
+      "summaryPatterns": [
+        "^ok\\s+",
+        "^FAIL\\s+"
+      ]
+    }
+  },
+  {
+    "id": "test-jest",
+    "label": "Jest",
+    "description": "Keep Jest failures and summary while removing passing noise.",
+    "category": "test",
+    "priority": 90,
+    "match": {
+      "outputTypes": [
+        "test-jest"
+      ],
+      "commands": [
+        "^(?:jest|npm\\s+(?:run\\s+)?test)\\b"
+      ],
+      "patterns": [
+        "Test Suites:\\s+\\d+",
+        "Tests:\\s+\\d+",
+        "^PASS\\s+",
+        "^FAIL\\s+"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "^FAIL\\s+",
+        "^\\s*●\\s+",
+        "Expected:",
+        "Received:",
+        "Test Suites:",
+        "Tests:",
+        "Snapshots:",
+        "Time:",
+        "\\s+at\\s+"
+      ],
+      "dropPatterns": [
+        "^PASS\\s+",
+        "^\\s*✓\\s+"
+      ],
+      "collapsePatterns": [
+        "^\\s*at "
+      ],
+      "deduplicate": true,
+      "maxLines": 140,
+      "headLines": 24,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "FAIL",
+        "Expected:",
+        "Received:",
+        "Test Suites:"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "test-pytest",
+    "label": "Pytest",
+    "description": "Keep pytest failures, tracebacks and terminal summary.",
+    "category": "test",
+    "priority": 90,
+    "match": {
+      "outputTypes": [
+        "test-pytest"
+      ],
+      "commands": [
+        "^(?:pytest|python\\s+-m\\s+pytest)\\b"
+      ],
+      "patterns": [
+        "=+\\s+(?:\\d+\\s+)?(?:passed|failed|errors?)",
+        "^E\\s+",
+        "^FAILED "
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "^FAILED ",
+        "^ERROR ",
+        "^E\\s+",
+        "Traceback \\(most recent call last\\):",
+        "=+ short test summary info =+",
+        "=+ .*failed",
+        "AssertionError"
+      ],
+      "dropPatterns": [
+        "^\\.",
+        "^\\s*$"
+      ],
+      "collapsePatterns": [
+        "^E\\s+"
+      ],
+      "deduplicate": true,
+      "maxLines": 160,
+      "headLines": 28,
+      "tailLines": 60
+    },
+    "preserve": {
+      "errorPatterns": [
+        "FAILED",
+        "ERROR",
+        "Traceback",
+        "AssertionError"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "test-vitest",
+    "label": "Vitest",
+    "description": "Keep failing suites, failed tests, stack headers, and final summary.",
+    "category": "test",
+    "priority": 92,
+    "match": {
+      "outputTypes": [
+        "test-vitest"
+      ],
+      "commands": [
+        "^(?:vitest|npm\\s+(?:run\\s+)?test:vitest)\\b"
+      ],
+      "patterns": [
+        "\\bvitest\\b",
+        "^ ✓ ",
+        "^ ❯ ",
+        "Test Files\\s+\\d+\\s+(?:passed|failed)"
+      ]
+    },
+    "rules": {
+      "includePatterns": [
+        "^\\s*FAIL\\s+",
+        "^\\s*❯\\s+",
+        "^\\s*×\\s+",
+        "Test Files\\s+",
+        "Tests\\s+",
+        "Duration\\s+",
+        "Error:",
+        "AssertionError",
+        "\\s+at\\s+"
+      ],
+      "dropPatterns": [
+        "^\\s*✓\\s+",
+        "^\\s*stdout \\|",
+        "^\\s*stderr \\|"
+      ],
+      "collapsePatterns": [
+        "^\\s*at "
+      ],
+      "deduplicate": true,
+      "maxLines": 140,
+      "headLines": 24,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "FAIL",
+        "Error:",
+        "AssertionError",
+        "Test Files"
+      ],
+      "summaryPatterns": []
+    }
+  },
+  {
+    "id": "tofu-plan",
+    "label": "OpenTofu Plan",
+    "description": "Keep OpenTofu plan actions and summary while stripping refresh noise.",
+    "category": "infra",
+    "priority": 87,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^tofu\\s+plan\\b"
+      ],
+      "patterns": [
+        "OpenTofu will perform the following actions",
+        "Plan: \\d+ to add"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "Refreshing state",
+        "Acquiring state lock",
+        "Releasing state lock",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "OpenTofu will perform",
+        "^[ ]*[#~+\\-/]",
+        "Plan: \\d+",
+        "Error:"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": false,
+      "maxLines": 160,
+      "headLines": 35,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "Error:",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "Plan: \\d+"
+      ]
+    }
+  },
+  {
+    "id": "turbo",
+    "label": "Turborepo",
+    "description": "Compact turbo task cache and failure output.",
+    "category": "build",
+    "priority": 76,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^turbo\\b",
+        "^npx\\s+turbo\\b"
+      ],
+      "patterns": [
+        "Tasks:",
+        "Remote caching"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "cache hit",
+        "cache miss",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "failed",
+        "error",
+        "Tasks:",
+        "Cached:",
+        "Time:",
+        "successful"
+      ],
+      "collapsePatterns": [
+        "^• Packages in scope"
+      ],
+      "deduplicate": true,
+      "maxLines": 120,
+      "headLines": 25,
+      "tailLines": 50
+    },
+    "preserve": {
+      "errorPatterns": [
+        "failed",
+        "error"
+      ],
+      "summaryPatterns": [
+        "Tasks:",
+        "Cached:",
+        "Time:"
+      ]
+    }
+  },
+  {
+    "id": "uv-sync",
+    "label": "uv sync",
+    "description": "Compact uv sync/install output.",
+    "category": "package",
+    "priority": 72,
+    "match": {
+      "outputTypes": [],
+      "commands": [
+        "^uv\\s+sync\\b",
+        "^uv\\s+pip\\s+install\\b"
+      ],
+      "patterns": [
+        "Resolved \\d+ packages?",
+        "Prepared \\d+ packages?"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^Resolved ",
+        "^Prepared ",
+        "^Installed ",
+        "^ \\+",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "error",
+        "failed",
+        "Installed",
+        "Uninstalled",
+        "Resolved"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 35,
+      "onEmpty": "uv: ok"
+    },
+    "preserve": {
+      "errorPatterns": [
+        "error",
+        "failed"
+      ],
+      "summaryPatterns": [
+        "Installed",
+        "Resolved"
+      ]
+    }
+  },
+  {
+    "id": "wget",
+    "label": "wget",
+    "description": "Remove wget progress output and keep final errors or saved-file summaries.",
+    "category": "cloud",
+    "priority": 70,
+    "match": {
+      "outputTypes": [
+        "wget"
+      ],
+      "commands": [
+        "^wget\\b"
+      ],
+      "patterns": [
+        "^--\\d{4}-\\d{2}-\\d{2}",
+        "^ERROR \\d{3}:"
+      ]
+    },
+    "rules": {
+      "stripAnsi": true,
+      "dropPatterns": [
+        "^\\s*\\d+K",
+        "^Saving to:",
+        "^\\s*$"
+      ],
+      "includePatterns": [
+        "^ERROR \\d{3}:",
+        "saved \\[\\d",
+        "^HTTP request sent"
+      ],
+      "collapsePatterns": [],
+      "deduplicate": true,
+      "maxLines": 100,
+      "headLines": 25,
+      "tailLines": 40
+    },
+    "preserve": {
+      "errorPatterns": [
+        "^ERROR \\d{3}:",
+        "failed",
+        "unable to resolve"
+      ],
+      "summaryPatterns": [
+        "saved \\[\\d",
+        "^HTTP request sent"
+      ]
+    }
+  }
+]

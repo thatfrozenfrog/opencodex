@@ -1,4 +1,6 @@
 {
+  "server-tool-result-compression.test.ts": "server",
+  "server-tool-saver-settings.test.ts": "server",
   "service-desktop-recovery.test.ts": "service", "catalog-omit-disabled-native.test.ts": "codex-integration", "provider-input-modalities.test.ts": "providers", "combo-description.test.ts": "routing",
   "combo-description-catalog.test.ts": "codex-integration", "codex-provider-routing.test.ts": "codex-integration", "config-native-reasoning-retention.test.ts": "config", "server-native-reasoning-retention-merge.test.ts": "server",
   "server-native-reasoning-retention.test.ts": "server", "config-workflow-budget.test.ts": "config", "server-workflow-budget-settings.test.ts": "server", "responses-retained-reasoning-stream-recovery.test.ts": "responses",

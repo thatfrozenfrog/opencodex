@@ -24,6 +24,10 @@ ocx start
 bun run dev:gui
 ```
 
+The Vite development server updates the UI automatically when GUI source files change. The normal
+proxy dashboard serves the compiled `gui/dist` files instead: run `cd gui && bun run build`, then
+refresh the browser to load UI changes. A GUI-only rebuild does not normally require a proxy restart.
+
 ## Sign-in
 
 On the default loopback bind (`localhost` / `127.0.0.1`) the dashboard never asks for a token:
@@ -81,7 +85,7 @@ host and port over a LAN IP or an alias.
 
 ## Dashboard layout
 
-The sidebar has seven rows, in order: **Dashboard**, **Connect**, **Codex**, **Providers**, **Models**, **Usage & Logs**, and **Remote Link**. **Connect** opens the page headed **Connect**, with its tab strip ordered **Codex**, **Claude**, **Claude Desktop**, **Grok Build**, then the remaining integrations. Claude has no sub-tabs; it shows the Claude Code settings directly. Claude Desktop is a separate Connect tab at `#claude/desktop`. Connect has no section switcher. **Usage & Logs** opens Usage and groups Usage, Logs & Debug, and Storage with a pill-shaped section switcher. The last row, **Remote Link**, groups Remote Link (`#remote`) and Remote Workspace (`#remote-workspace`, when available) with the same switcher. **Codex** is the renamed **Codex Set** row; the preserved URLs include `#codex-set`, `#claude`, `#claude/code`, and `#claude/desktop`; the former `#claude/settings` bookmark opens Code. The former `#claude/account` bookmark redirects to `#providers?provider=anthropic&tab=accounts`. Startup (`#startup`) stays outside the sidebar.
+The sidebar includes **Dashboard**, **Connect**, **Codex**, **Providers**, **Models**, **Playground**, **Token Saver**, **Usage & Logs**, and **Remote Link**, in that order. **Playground** (`#playground`) opens a chat workspace for testing configured models. **Connect** opens the page headed **Connect**, with its tab strip ordered **Codex**, **Claude**, **Claude Desktop**, **Grok Build**, then the remaining integrations. Claude has no sub-tabs; it shows the Claude Code settings directly. Claude Desktop is a separate Connect tab at `#claude/desktop`. Connect has no section switcher. **Usage & Logs** opens Usage and groups Usage, Logs & Debug, and Storage with a pill-shaped section switcher. The last row, **Remote Link**, groups Remote Link (`#remote`) and Remote Workspace (`#remote-workspace`, when available) with the same switcher. **Codex** is the renamed **Codex Set** row; the preserved URLs include `#codex-set`, `#claude`, `#claude/code`, and `#claude/desktop`; the former `#claude/settings` bookmark opens Code. The former `#claude/account` bookmark redirects to `#providers?provider=anthropic&tab=accounts`. Startup (`#startup`) stays outside the sidebar.
 
 Responses first-output timing includes streamed function arguments and custom-tool input, as well
 as text and reasoning. A tool-only turn can therefore have a first-output time even without prose.
@@ -92,6 +96,47 @@ Overview uses matching status cards and full-width settings rows. On wide screen
 one column and model/effort controls share another. On narrower screens, controls move below their
 labels in the same reading order. Long version labels are shortened visually; hover the version
 badge or the version value to read the full value.
+
+### Playground
+
+Playground fills the available dashboard width and height, with a centered chat transcript and
+composer. **Full screen** hides browser chrome when the browser supports it; Escape exits that mode.
+On narrow screens, conversation history opens as a dismissible drawer. Drafts stay with their
+conversation while switching chats. The model picker closes with Escape or a click outside it.
+Playground uses the dashboard's existing theme. Its conversation sidebar
+supports new chats, search, rename, delete, and selection. Each conversation's action button expands
+contained rename/delete controls below its title; Escape closes those controls. Short transitions
+respect the operating system's reduced-motion preference. The model picker supports search,
+provider grouping, favorites, recent selections, and custom model IDs under an existing configured
+provider. Switching models preserves messages. **API connections** opens Providers, where endpoints
+and credentials remain managed by the backend; the custom-model dialog does not collect keys.
+
+Send with Enter, or insert a newline with Shift+Enter. Stop cancels the current request. Copy,
+regenerate, retry, and edit-and-resend actions operate on real provider results. Editing asks whether
+to create a separate branch or explicitly replace later messages. Generation settings apply to the
+next send in the current conversation: system prompt, optional temperature, top-p, reasoning effort,
+and an output cap of up to 16,384 tokens (2,048 when omitted). Providers may reject optional parameters.
+
+Current limitations:
+
+- Responses arrive as completed text; the streaming control is disabled. Attachments are disabled.
+- Conversations, favorites, recent models, and custom labels stay in page memory. Leaving the page
+  or reloading clears them. Normal proxy usage and logging policies still apply to model calls.
+- Response labels show the requested route, not verified upstream model identity. The current
+  backend helper does not return actual provider/model metadata, token usage, cache usage, or finish
+  reason. Missing telemetry shows a dash; latency is measured in the browser.
+- Cost estimates, per-chat quota windows, context consumption, connection-test actions, durable
+  history, and per-model capability-aware controls are not implemented. The existing shared quota
+  bar remains available; catalog context limits are not live context-consumption measurements.
+- Message rendering supports fenced code, inline code, and bold text, not full Markdown or HTML.
+- Response details show the submitted request body and returned text payload, not upstream headers,
+  secrets, or a complete upstream wire capture. Raw details may contain your own prompt contents.
+
+`POST /api/playground/chat` requires normal management authorization and CSRF checks. It accepts only
+bounded text-chat fields, uses the configured local inference path, and returns fixed error categories.
+Requests have a 120-second deadline and a process-wide limit of two simultaneous Playground calls.
+A new backend route requires a proxy restart after updating source; later GUI-only edits need only a
+GUI rebuild and browser refresh.
 
 ### Quota summary bar
 

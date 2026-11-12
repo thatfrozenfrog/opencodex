@@ -96,6 +96,8 @@ export interface ManagementRoute {
 
 /** Every reachable management route. */
 export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
+  // server/management/playground-routes
+  { method: "POST", path: "/api/playground/chat", module: "server/management/playground-routes", mutates: true, exempt: { reason: "gui-only", why: "Dashboard text Playground; terminal clients use the ordinary /v1/chat/completions data plane." } },
   // server/management-api
   { method: "GET", path: "/api/stop", module: "server/management-api", mutates: false },
   { method: "POST", path: "/api/stop", module: "server/management-api", mutates: true },
@@ -230,6 +232,9 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "GET", path: "/api/auto-review-settings", module: "server/management/config-routes", mutates: false },
   { method: "GET", path: "/api/diagnostics/project-config", module: "server/management/config-routes", mutates: false },
   { method: "GET", path: "/api/settings", module: "server/management/config-routes", mutates: false },
+  { method: "GET", path: "/api/tool-result-compression", module: "server/management/tool-result-compression-routes", mutates: false, exempt: { reason: "local-transport", why: "The setting is also readable with ocx config get." } },
+  { method: "POST", path: "/api/tool-result-compression/test", module: "server/management/tool-result-compression-routes", mutates: false, exempt: { reason: "local-transport", why: "Preview runs the local filter without provider calls." } },
+  { method: "PUT", path: "/api/tool-result-compression", module: "server/management/tool-result-compression-routes", mutates: true, exempt: { reason: "deferred-verb", why: "A live CLI setting is deferred; ocx config set updates the stored value.", owner: "token-saver-live-cli", ownerDoc: "structure/data-planes/inbound-compat.md" } },
   { method: "GET", path: "/api/native-reasoning-retention", module: "server/management/native-reasoning-retention-routes", mutates: false, exempt: { reason: "local-transport", why: "The CLI reads the same nativeReasoningRetention policy through ocx config get; no separate HTTP-specific settings verb is required." } },
   { method: "PUT", path: "/api/native-reasoning-retention", module: "server/management/native-reasoning-retention-routes", mutates: true, exempt: { reason: "deferred-verb", why: "A dedicated live CLI verb for this policy is deferred to native-reasoning-retention-live-cli; ocx config set/unset currently edits the same block on disk without live convergence.", owner: "native-reasoning-retention-live-cli", ownerDoc: "structure/transports/native-reasoning-retention.md" } },
   { method: "GET", path: "/api/shadow-call-settings", module: "server/management/config-routes", mutates: false },

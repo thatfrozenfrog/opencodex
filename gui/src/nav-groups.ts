@@ -15,7 +15,7 @@
  */
 import type { Page } from "./app-routing";
 import type { TKey } from "./i18n/shared";
-import { IconActivity, IconBoxes, IconCodex, IconGrid, IconLink, IconMonitor, IconServer } from "./icons";
+import { IconActivity, IconBoxes, IconCodex, IconGrid, IconLink, IconMonitor, IconServer, IconTerminal } from "./icons";
 
 export type NavGroupId =
   | "dashboard"
@@ -23,6 +23,8 @@ export type NavGroupId =
   | "codex-set"
   | "providers"
   | "models"
+  | "playground"
+  | "token-saver"
   | "usage-logs"
   | "remote";
 
@@ -40,6 +42,8 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   { id: "codex-set", tkey: "nav.codexSet", Icon: IconCodex, pages: ["codex-set"] },
   { id: "providers", tkey: "nav.providers", Icon: IconServer, pages: ["providers"] },
   { id: "models", tkey: "nav.models", Icon: IconBoxes, pages: ["models"] },
+  { id: "playground", tkey: "nav.playground", Icon: IconTerminal, pages: ["playground"] },
+  { id: "token-saver", tkey: "tokenSaver.title", Icon: IconActivity, pages: ["token-saver"] },
   { id: "usage-logs", tkey: "nav.usageLogs", Icon: IconActivity, pages: ["usage", "logs", "storage"] },
   { id: "remote", tkey: "nav.remote", Icon: IconMonitor, pages: ["remote", "remote-workspace"] },
 ];

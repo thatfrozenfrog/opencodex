@@ -1,5 +1,7 @@
 {
   "config-concurrent-inbound-body.test.ts": "config",
   "inbound-body-admission.test.ts": "server",
-  "inbound-body-budget.test.ts": "server"
+  "inbound-body-budget.test.ts": "server",
+  "server-tool-result-compression.test.ts": "server",
+  "server-tool-saver-settings.test.ts": "server"
 }

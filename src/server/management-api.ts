@@ -60,6 +60,8 @@ import { applySystemEnvToggle } from "./system-env";
 import type { ManagementApiDeps } from "./management/context";
 import { handleConfigRoutes } from "./management/config-routes";
 import { handleNativeReasoningRetentionRoutes } from "./management/native-reasoning-retention-routes";
+import { handleToolResultCompressionRoutes } from "./management/tool-result-compression-routes";
+import { handlePlaygroundRoutes } from "./management/playground-routes";
 import { handleLogsUsageRoutes } from "./management/logs-usage-routes";
 import { handleStorageLogGuardRoutes } from "./management/storage-log-guard-routes";
 import { handleRequestHistoryRoutes } from "./management/request-history-routes";
@@ -361,6 +363,8 @@ export async function handleManagementAPI(
     ??     (await handleRemoteWorkspaceRoutesOnDemand(ctx))
     ??     (await handleConfigRoutes(ctx))
     ??     (await handleNativeReasoningRetentionRoutes(ctx))
+    ??     (await handleToolResultCompressionRoutes(ctx))
+    ??     (await handlePlaygroundRoutes(ctx))
     ??     (await handleStorageLogGuardRoutes(ctx))
     ??     (await handleLogsUsageRoutes(ctx))
     ??     (await handleRequestHistoryRoutes(ctx))

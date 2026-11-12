@@ -5,6 +5,8 @@ import Providers from "./pages/Providers";
 import Models from "./pages/Models";
 import Logs from "./pages/Logs";
 import Usage from "./pages/Usage";
+import TokenSaver from "./pages/TokenSaver";
+import Playground from "./pages/Playground";
 import Storage from "./pages/Storage";
 import CodexSet from "./pages/CodexSet";
 import Integrations from "./pages/Integrations";
@@ -46,9 +48,11 @@ const PAGE_TKEY: Record<Page, TKey> = {
   startup: "nav.startup",
   providers: "nav.providers",
   models: "nav.models",
+  playground: "nav.playground",
   logs: "nav.logs",
   usage: "nav.usage",
   storage: "nav.storage",
+  "token-saver": "tokenSaver.title",
   remote: "nav.remote",
   "remote-workspace": "nav.remoteWorkspace",
   "codex-set": "nav.codexSet",
@@ -552,7 +556,7 @@ export default function App() {
           can know which tab is showing.
         */}
         <div className={`main-inner${
-          page === "models" && modelsTab === "combos" ? " main-inner--combos" : ""
+          page === "playground" ? " main-inner--playground" : page === "models" && modelsTab === "combos" ? " main-inner--combos" : ""
         }`}>
           {/*
             Outside the page-keyed ErrorBoundary on purpose: that boundary remounts on
@@ -615,7 +619,9 @@ export default function App() {
                 {page === "usage" && <Usage apiBase={sharedBase} connected={targets.connected} apiKeyId={targets.apiKeyId} />}
                 {page === "storage" && <Storage apiBase={sharedBase} />}
                 {page === "remote" && !remotePairingFormOpen && <RemoteLink key={`${sharedBase}:${sharedSessionEpoch}`} apiBase={sharedBase} sessionReady={sharedSessionReady} pairingRecoveryAvailable={hubPairingAvailable} onRequestPairing={() => setHubPairingOpen(true)} workspaceAvailable={remoteWorkspaceAvailable} onOpenWorkspace={() => navigateToPage("remote-workspace")} />}
-                {page === "remote-workspace" && <RemoteWorkspaceRoute available={remoteWorkspaceAvailable} apiBase={sharedBase} hubOrigin={targets.shared.serverOrigin} onOpenRemoteLink={() => navigateToPage("remote")} />}
+                {page === "token-saver" && <TokenSaver apiBase={sharedBase} />}
+                {page === "playground" && <Playground key={sharedBase} apiBase={sharedBase} />}
+              {page === "remote-workspace" && <RemoteWorkspaceRoute available={remoteWorkspaceAvailable} apiBase={sharedBase} hubOrigin={targets.shared.serverOrigin} onOpenRemoteLink={() => navigateToPage("remote")} />}
                 {page === "codex-set" && <CodexSet apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
                 {shellPage === "integrations" && <Integrations apiBase={sharedBase} machineApiBase={machineBase} connected={targets.connected} />}
               </>

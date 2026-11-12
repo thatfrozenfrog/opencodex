@@ -15,6 +15,7 @@ import { chatSettingsBody, chatToResponsesBody } from "../protocols/codecs/chat"
 import { chatConversationToIr, chatIrRouteEvidence, withDirectChatConversation, type ChatIrConversation } from "../protocols/codecs/chat-ir";
 import { antigravityDirectDeclineReason } from "./antigravity-direct-eligibility";
 import { normalizeChatImageParts } from "../chat/image-parts";
+import { compressToolResults } from "./tool-result-compression";
 import {
   chatCompletionsErrorResponse,
   collectChatCompletion,
@@ -195,6 +196,7 @@ async function handleChatCompletionsWithBudget(
     // forwards this body as-is, so both must observe the same parts. A body with no
     // foreign image part is returned by reference and stays byte-identical.
     chatBody = normalizeChatImageParts(rawBody);
+    compressToolResults(chatBody, config.toolResultCompression, config.toolResultCompressionOptions);
   } catch (err) {
     const overflow = isTranslatorBudgetExceededError(err);
     const status = overflow ? 413 : err instanceof ChatCompletionsRequestError ? 400 : 500;

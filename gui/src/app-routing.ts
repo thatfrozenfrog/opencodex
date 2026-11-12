@@ -7,9 +7,11 @@ export type Page =
   | "startup"
   | "providers"
   | "models"
+  | "playground"
   | "logs"
   | "usage"
   | "storage"
+  | "token-saver"
   | "remote"
   | "remote-workspace"
   | "codex-set"
@@ -21,9 +23,11 @@ export const VALID_PAGES = new Set<Page>([
   "startup",
   "providers",
   "models",
+  "playground",
   "logs",
   "usage",
   "storage",
+  "token-saver",
   "remote",
   "remote-workspace",
   "codex-set",
